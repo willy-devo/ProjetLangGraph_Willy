@@ -1,0 +1,272 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Discount API",
+    "version": "1.0.0",
+    "x-api-id": "discount-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Marketing",
+    "x-domain": "E-Commerce",
+    "description": "Campagnes de remise et codes de réduction. Création, activation et suivi des promotions. DIFFÉRENCE vs pricing-api : Discount gère les campagnes et codes promo, Pricing calcule le prix final en intégrant toutes les règles dont les remises.",
+    "x-false-positive-warning": "Calcul prix final → pricing-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/discounts": {
+      "post": {
+        "summary": "Créer un code de réduction",
+        "operationId": "createDiscount",
+        "tags": [
+          "Discounts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscountCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/discounts/{code}": {
+      "parameters": [
+        {
+          "name": "code",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Détails d'un code promo",
+        "operationId": "getDiscount",
+        "tags": [
+          "Discounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/discounts/{id}/activate": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Activer un code promo",
+        "operationId": "activateDiscount",
+        "tags": [
+          "Discounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Activé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/discounts/{id}/deactivate": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Désactiver un code promo",
+        "operationId": "deactivateDiscount",
+        "tags": [
+          "Discounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Désactivé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/discounts/campaigns": {
+      "get": {
+        "summary": "Lister les campagnes promotionnelles",
+        "operationId": "getCampaigns",
+        "tags": [
+          "Campaigns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Campagnes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DiscountCreate": {
+        "type": "object",
+        "required": [
+          "code",
+          "type",
+          "value"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "SUMMER20"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ]
+          },
+          "value": {
+            "type": "number",
+            "example": 20
+          },
+          "min_order_amount": {
+            "type": "number"
+          },
+          "max_uses": {
+            "type": "integer"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date"
+          },
+          "applicable_products": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

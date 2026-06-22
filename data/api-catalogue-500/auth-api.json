@@ -1,0 +1,281 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Auth API",
+    "version": "2.0.0",
+    "x-api-id": "auth-api",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Identity",
+    "x-domain": "Identity & Access",
+    "description": "Authentification et autorisation. Tokens JWT, OAuth2, refresh tokens et gestion des sessions."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/auth/login": {
+      "post": {
+        "summary": "Authentifier un utilisateur et obtenir un JWT",
+        "operationId": "login",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "remember_me": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JWT + refresh token"
+          },
+          "401": {
+            "description": "Identifiants invalides"
+          }
+        },
+        "security": []
+      }
+    },
+    "/v2/auth/logout": {
+      "post": {
+        "summary": "Déconnecter et révoquer le token",
+        "operationId": "logout",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "204": {
+            "description": "Déconnecté"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/auth/refresh": {
+      "post": {
+        "summary": "Renouveler le JWT avec le refresh token",
+        "operationId": "refreshToken",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refresh_token"
+                ],
+                "properties": {
+                  "refresh_token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nouveau JWT"
+          },
+          "401": {
+            "description": "Refresh token expiré"
+          }
+        },
+        "security": []
+      }
+    },
+    "/v2/auth/me": {
+      "get": {
+        "summary": "Profil de l'utilisateur authentifié",
+        "operationId": "getMe",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/auth/forgot-password": {
+      "post": {
+        "summary": "Initier la réinitialisation du mot de passe",
+        "operationId": "forgotPassword",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Email envoyé si le compte existe"
+          }
+        },
+        "security": []
+      }
+    },
+    "/v2/auth/reset-password": {
+      "post": {
+        "summary": "Réinitialiser le mot de passe avec le token reçu par email",
+        "operationId": "resetPassword",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "new_password"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réinitialisé"
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

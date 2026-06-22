@@ -1,0 +1,200 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Returns API",
+    "version": "1.0.0",
+    "x-api-id": "returns-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Retail",
+    "x-domain": "Retail",
+    "description": "Retours et remboursements. SAV, labels retour et reintegration stock."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/returns": {
+      "get": {
+        "summary": "Retours en cours",
+        "operationId": "listReturns",
+        "tags": [
+          "Returns"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Initier retour",
+        "operationId": "createReturn",
+        "tags": [
+          "Returns"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/returns/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Detail retour",
+        "operationId": "getReturn",
+        "tags": [
+          "Returns"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre a jour statut",
+        "operationId": "updateReturnStatus",
+        "tags": [
+          "Returns"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/returns/{id}/label": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Label retour",
+        "operationId": "getReturnLabel",
+        "tags": [
+          "Label"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Générer",
+        "operationId": "generateReturnLabel",
+        "tags": [
+          "Label"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/returns/{id}/refund": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Traiter remboursement",
+        "operationId": "processRefund",
+        "tags": [
+          "Refund"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Pest Detection API",
+    "version": "1.0.0",
+    "x-api-id": "pest-detection-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Agriculture",
+    "x-domain": "Agriculture",
+    "description": "Détection ravageurs et maladies. Identification IA par photo et traitements recommandés."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/pests/detect": {
+      "post": {
+        "summary": "Identifier ravageur/maladie par photo",
+        "operationId": "detectPest",
+        "tags": [
+          "Detection"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pests/{fieldId}/monitoring": {
+      "parameters": [
+        {
+          "name": "fieldId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Surveillance active",
+        "operationId": "getPestMonitoring",
+        "tags": [
+          "Monitoring"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Signaler observation",
+        "operationId": "reportPest",
+        "tags": [
+          "Monitoring"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pests/treatments": {
+      "get": {
+        "summary": "Traitements disponibles",
+        "operationId": "listTreatments",
+        "tags": [
+          "Treatments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Recommander traitement",
+        "operationId": "recommendTreatment",
+        "tags": [
+          "Treatments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,269 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Insurance Claim API",
+    "version": "3.0.0",
+    "x-api-id": "insurance-claim-api-v3",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Assurance",
+    "x-domain": "Insurance",
+    "description": "Déclaration sinistres complète. Photo, expertise IA et suivi indemnisation. DIFFERENCE vs fraud-claims-api : Claim = sinistre légitime à indemniser, Fraud Claims = sinistre suspect à investiguer.",
+    "x-false-positive-warning": "Sinistre suspect -> fraud-claims-api.",
+    "x-breaking-changes-from-previous": [
+      "Photos IA",
+      "Expertise automatique",
+      "Suivi temps reel"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v3/claims": {
+      "get": {
+        "summary": "Sinistres en cours",
+        "operationId": "listClaimsV3",
+        "tags": [
+          "Claims"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Déclarer sinistre",
+        "operationId": "createClaimV3",
+        "tags": [
+          "Claims"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/claims/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Detail",
+        "operationId": "getClaimV3",
+        "tags": [
+          "Claims"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier",
+        "operationId": "updateClaimV3",
+        "tags": [
+          "Claims"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/claims/{id}/documents": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Photos/docs",
+        "operationId": "uploadClaimDoc",
+        "tags": [
+          "Docs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Documents",
+        "operationId": "getClaimDocs",
+        "tags": [
+          "Docs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/claims/{id}/assessment": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Expertise",
+        "operationId": "getAssessment",
+        "tags": [
+          "Assessment"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Demander expertise",
+        "operationId": "requestAssessment",
+        "tags": [
+          "Assessment"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/claims/{id}/settlement": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Indemnisation",
+        "operationId": "getSettlement",
+        "tags": [
+          "Settlement"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Approuver",
+        "operationId": "approveSettlement",
+        "tags": [
+          "Settlement"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

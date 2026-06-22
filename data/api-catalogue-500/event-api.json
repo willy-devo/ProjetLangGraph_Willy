@@ -1,0 +1,360 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Event API",
+    "version": "1.0.0",
+    "x-api-id": "event-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Operations",
+    "description": "Gestion des événements métier publiés sur le bus d'événements (Event Bus). Publication, souscription et replay. DIFFÉRENCE vs event-tracking-api : Event API est le bus d'événements système (ordre.créé, paiement.réussi) pour la communication entre microservices, Event Tracking API collecte les événements comportementaux utilisateurs pour l'analytics. DIFFÉRENCE vs calendar-api : Event API = événements systèmes asynchrones, Calendar API = événements humains planifiés dans le temps.",
+    "x-false-positive-warning": "Comportement utilisateur pour analytics → event-tracking-api. Agenda et planification RDV → calendar-api. Files de messages → queue-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/events/publish": {
+      "post": {
+        "summary": "Publier un événement sur le bus",
+        "operationId": "publishEvent",
+        "tags": [
+          "Events"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventPublish"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Événement publié"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/events/subscriptions": {
+      "post": {
+        "summary": "Souscrire à un type d'événement",
+        "operationId": "subscribeEvent",
+        "tags": [
+          "Subscriptions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "event_type",
+                  "endpoint_url"
+                ],
+                "properties": {
+                  "event_type": {
+                    "type": "string",
+                    "example": "order.created"
+                  },
+                  "endpoint_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "filter": {
+                    "type": "object"
+                  },
+                  "retry_policy": {
+                    "type": "object",
+                    "properties": {
+                      "max_attempts": {
+                        "type": "integer",
+                        "default": 3
+                      },
+                      "backoff": {
+                        "type": "string",
+                        "enum": [
+                          "linear",
+                          "exponential"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Souscription créée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les souscriptions actives",
+        "operationId": "listSubscriptions",
+        "tags": [
+          "Subscriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Souscriptions"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "summary": "Consulter le journal des événements passés",
+        "operationId": "getEvents",
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Événements"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/events/replay": {
+      "post": {
+        "summary": "Rejouer des événements passés (utile après incident)",
+        "operationId": "replayEvents",
+        "tags": [
+          "Events"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "to": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "event_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "target_endpoint": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Replay lancé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/events/types": {
+      "get": {
+        "summary": "Catalogue des types d'événements disponibles",
+        "operationId": "listEventTypes",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Types avec schéma JSON de chaque payload"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EventPublish": {
+        "type": "object",
+        "required": [
+          "type",
+          "source",
+          "payload"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "order.created",
+            "description": "Format: resource.action"
+          },
+          "source": {
+            "type": "string",
+            "example": "order-api-v4"
+          },
+          "payload": {
+            "type": "object"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "description": "Clé idempotente pour éviter les doublons"
+          },
+          "correlation_id": {
+            "type": "string",
+            "description": "Identifiant de corrélation pour le tracing distribué"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "normal",
+              "high"
+            ],
+            "default": "normal"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

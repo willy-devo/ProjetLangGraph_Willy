@@ -1,0 +1,118 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Fuel Management API",
+    "version": "1.0.0",
+    "x-api-id": "fuel-management-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Transport",
+    "x-domain": "Transport",
+    "description": "Gestion carburant flotte. Consommation, ravitaillement et coûts."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/fuel/{vehicleId}": {
+      "parameters": [
+        {
+          "name": "vehicleId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Niveau carburant",
+        "operationId": "getFuelLevel",
+        "tags": [
+          "Fuel"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Enregistrer ravitaillement",
+        "operationId": "recordFueling",
+        "tags": [
+          "Fuel"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/fuel/consumption/{fleetId}": {
+      "parameters": [
+        {
+          "name": "fleetId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Coûts carburant",
+        "operationId": "getFuelCosts",
+        "tags": [
+          "Consumption"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

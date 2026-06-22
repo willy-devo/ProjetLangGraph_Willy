@@ -1,0 +1,223 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Machine API",
+    "version": "2.0.0",
+    "x-api-id": "machine-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Industrie",
+    "x-domain": "Industry",
+    "description": "Gestion machines industrielles. Etat, capacite et programmes CNC. DIFFERENCE vs device-registry-api : Machine = equipment industriel lourd avec programmes usinage, Device Registry = appareils IoT generiques.",
+    "x-false-positive-warning": "IoT generique -> device-registry-api.",
+    "x-breaking-changes-from-previous": [
+      "Programmes CNC",
+      "OEE calcule",
+      "Alertes automatiques"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v2/machines": {
+      "get": {
+        "summary": "Machines",
+        "operationId": "listMachinesV2",
+        "tags": [
+          "Machines"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter",
+        "operationId": "addMachineV2",
+        "tags": [
+          "Machines"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/machines/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Detail",
+        "operationId": "getMachineV2",
+        "tags": [
+          "Machines"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier",
+        "operationId": "updateMachineV2",
+        "tags": [
+          "Machines"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/machines/{id}/status": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Etat machine",
+        "operationId": "getMachineStatus",
+        "tags": [
+          "Status"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Changer etat",
+        "operationId": "setMachineStatus",
+        "tags": [
+          "Status"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/machines/{id}/programs": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Programmes CNC",
+        "operationId": "getNCPrograms",
+        "tags": [
+          "Programs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Charger programme",
+        "operationId": "uploadProgram",
+        "tags": [
+          "Programs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

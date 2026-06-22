@@ -1,0 +1,138 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ETA API",
+    "version": "1.0.0",
+    "x-api-id": "eta-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Transport",
+    "x-domain": "Transport",
+    "description": "Calcul temps d'arrivée estimé. Trafic temps réel, conditions météo et historique. DIFFERENCE vs route-optimization-api : ETA = estimation heure arrivee, Route = calcul itineraire optimal.",
+    "x-false-positive-warning": "Calcul itinéraire -> route-optimization-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/eta/calculate": {
+      "post": {
+        "summary": "Calculer ETA",
+        "operationId": "calculateETA",
+        "tags": [
+          "ETA"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/eta/{shipmentId}": {
+      "parameters": [
+        {
+          "name": "shipmentId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "ETA livraison",
+        "operationId": "getShipmentETA",
+        "tags": [
+          "ETA"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre a jour ETA",
+        "operationId": "updateETA",
+        "tags": [
+          "ETA"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/eta/history/{routeId}": {
+      "parameters": [
+        {
+          "name": "routeId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Précision historique ETA",
+        "operationId": "getETAHistory",
+        "tags": [
+          "History"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

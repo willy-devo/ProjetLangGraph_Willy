@@ -1,0 +1,43 @@
+# ── Secrets : ne JAMAIS les copier dans l'image (injectés via Secret Manager) ──
+.env
+.env.*
+service_account.json
+*-service-account.json
+credentials.json
+token.json
+*.json.key
+*.pem
+
+# ── Git / CI ──
+.git/
+.gitignore
+.github/
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# ── Tests : pas besoin dans l'image de prod ──
+tests/
+.pytest_cache/
+.coverage
+
+# ── Caches ──
+.mypy_cache/
+.ruff_cache/
+.chainlit/
+
+# ── Sorties locales ──
+data/results/
+
+# ── Doc / IDE ──
+README.md
+DEPLOY.md
+.idea/
+.vscode/
+.DS_Store

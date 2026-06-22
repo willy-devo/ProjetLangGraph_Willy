@@ -1,0 +1,114 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Check-in API",
+    "version": "2.0.0",
+    "x-api-id": "checkin-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Tourisme",
+    "x-domain": "Tourism",
+    "description": "Check-in et check-out hôtels. Mobile, clé digitale et documents. DIFFERENCE vs patient-admission-api : Checkin = accueil hôtel touristique, Patient Admission = admission hospitalière médicale.",
+    "x-false-positive-warning": "Admission hospitalière -> patient-admission-api.",
+    "x-breaking-changes-from-previous": [
+      "Check-in mobile",
+      "Clé digitale",
+      "Documents auto"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v2/checkin": {
+      "post": {
+        "summary": "Enregistrer depart",
+        "operationId": "checkoutV2",
+        "tags": [
+          "Checkin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/checkin/{bookingId}": {
+      "parameters": [
+        {
+          "name": "bookingId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut",
+        "operationId": "getCheckinStatus",
+        "tags": [
+          "Checkin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Clé digitale",
+        "operationId": "digitalKey",
+        "tags": [
+          "Checkin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

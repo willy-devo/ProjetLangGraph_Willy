@@ -1,0 +1,220 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Prescription API",
+    "version": "2.0.0",
+    "x-api-id": "prescription-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Santé",
+    "x-domain": "Healthcare",
+    "description": "Ordonnances électroniques sécurisées avec signature numérique et envoi pharmacie. DIFFÉRENCE vs drug-interaction-api : Prescription = document légal, Drug Interaction = vérification incompatibilités.",
+    "x-false-positive-warning": "Interactions médicamenteuses → drug-interaction-api.",
+    "x-breaking-changes-from-previous": [
+      "Signature numérique",
+      "Envoi pharmacie automatique"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/prescriptions": {
+      "get": {
+        "summary": "Lister",
+        "operationId": "listPrescV2",
+        "tags": [
+          "Prescriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer ordonnance",
+        "operationId": "createPrescV2",
+        "tags": [
+          "Prescriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/prescriptions/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Détail",
+        "operationId": "getPrescV2",
+        "tags": [
+          "Prescriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier",
+        "operationId": "updatePrescV2",
+        "tags": [
+          "Prescriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Annuler",
+        "operationId": "cancelPrescV2",
+        "tags": [
+          "Prescriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/prescriptions/{id}/dispense": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Marquer dispensée",
+        "operationId": "dispensePrescV2",
+        "tags": [
+          "Dispense"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/prescriptions/{id}/renew": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Renouveler",
+        "operationId": "renewPrescV2",
+        "tags": [
+          "Renew"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Ressource non trouvée"
+      },
+      "BadRequest": {
+        "description": "Données invalides"
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

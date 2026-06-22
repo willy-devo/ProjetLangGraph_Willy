@@ -1,0 +1,109 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Contract Analytics API",
+    "version": "1.0.0",
+    "x-api-id": "contract-analytics-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Legal",
+    "x-domain": "Legal",
+    "description": "Analyse contrats par IA. Extraction clauses, risques et comparaison. DIFFERENCE vs contract-api : Contract Analytics = analyse IA existants, Contract = gestion cycle de vie.",
+    "x-false-positive-warning": "Gestion cycle de vie -> contract-api-v3."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/contract-analytics/{contractId}": {
+      "parameters": [
+        {
+          "name": "contractId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Analyser contrat",
+        "operationId": "analyzeContract",
+        "tags": [
+          "Analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Risques identifies",
+        "operationId": "getContractRisks",
+        "tags": [
+          "Analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/contract-analytics/compare": {
+      "post": {
+        "summary": "Comparer contrats",
+        "operationId": "compareContracts",
+        "tags": [
+          "Compare"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

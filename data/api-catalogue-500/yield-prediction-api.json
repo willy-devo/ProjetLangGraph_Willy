@@ -1,0 +1,119 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Yield Prediction API",
+    "version": "1.0.0",
+    "x-api-id": "yield-prediction-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Agriculture",
+    "x-domain": "Agriculture",
+    "description": "Prévisions rendements par IA. Modèles satellites et météo. DIFFERENCE vs crop-api : Yield Prediction = modèle prédictif ML, Crop = données réelles cultures.",
+    "x-false-positive-warning": "Données réelles cultures -> crop-api-v2."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/yield/{fieldId}": {
+      "parameters": [
+        {
+          "name": "fieldId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Prédiction rendement",
+        "operationId": "getYieldPrediction",
+        "tags": [
+          "Yield"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Lancer modèle",
+        "operationId": "runYieldModel",
+        "tags": [
+          "Yield"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/yield/{fieldId}/scenarios": {
+      "parameters": [
+        {
+          "name": "fieldId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Scénarios prédiction",
+        "operationId": "getYieldScenarios",
+        "tags": [
+          "Scenarios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Network API",
+    "version": "1.0.0",
+    "x-api-id": "network-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Telecom",
+    "x-domain": "Telecom",
+    "description": "Gestion reseau telecom. Noeuds, couverture et qualite de service."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/network/nodes": {
+      "get": {
+        "summary": "Noeuds",
+        "operationId": "listNetworkNodes",
+        "tags": [
+          "Nodes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter",
+        "operationId": "addNode",
+        "tags": [
+          "Nodes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/network/coverage/{location}": {
+      "parameters": [
+        {
+          "name": "location",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Couverture",
+        "operationId": "getCoverage",
+        "tags": [
+          "Coverage"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/network/qos": {
+      "get": {
+        "summary": "Metriques QoS",
+        "operationId": "getQoSMetrics",
+        "tags": [
+          "QoS"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/network/incidents": {
+      "get": {
+        "summary": "Incidents",
+        "operationId": "listNetworkIncidents",
+        "tags": [
+          "Incidents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Signaler",
+        "operationId": "reportNetworkIncident",
+        "tags": [
+          "Incidents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

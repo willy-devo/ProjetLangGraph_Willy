@@ -1,0 +1,168 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Irrigation API",
+    "version": "2.0.0",
+    "x-api-id": "irrigation-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Agriculture",
+    "x-domain": "Agriculture",
+    "description": "Gestion systèmes d'irrigation. Programmation, consommation eau et optimisation.",
+    "x-breaking-changes-from-previous": [
+      "Programmation avancée",
+      "Consommation en temps reel"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v2/irrigation/{fieldId}": {
+      "parameters": [
+        {
+          "name": "fieldId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut irrigation",
+        "operationId": "getIrrigationStatus",
+        "tags": [
+          "Irrigation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Arrêter",
+        "operationId": "stopIrrigation",
+        "tags": [
+          "Irrigation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/irrigation/{fieldId}/schedule": {
+      "parameters": [
+        {
+          "name": "fieldId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Planning",
+        "operationId": "getIrrigationSchedule",
+        "tags": [
+          "Schedule"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier",
+        "operationId": "updateSchedule",
+        "tags": [
+          "Schedule"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/irrigation/{fieldId}/consumption": {
+      "parameters": [
+        {
+          "name": "fieldId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Consommation eau",
+        "operationId": "getWaterConsumption",
+        "tags": [
+          "Consumption"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Mortgage API",
+    "version": "2.0.0",
+    "x-api-id": "mortgage-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Banque",
+    "x-domain": "Banking",
+    "description": "Prets immobiliers avec hypotheque. Tableau d'amortissement et mainlevee. DIFFERENCE vs loan-api : Mortgage = credit immobilier avec garantie, Loan = pret sans garantie.",
+    "x-false-positive-warning": "Pret personnel -> loan-api-v3.",
+    "x-breaking-changes-from-previous": [
+      "Tableau amortissement",
+      "Mainlevee"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v2/mortgages": {
+      "get": {
+        "summary": "Portefeuille",
+        "operationId": "listMortgagesV2",
+        "tags": [
+          "Mortgages"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Demander",
+        "operationId": "applyMortgageV2",
+        "tags": [
+          "Mortgages"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/mortgages/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Dossier complet",
+        "operationId": "getMortgageV2",
+        "tags": [
+          "Mortgages"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier",
+        "operationId": "updateMortgage",
+        "tags": [
+          "Mortgages"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/mortgages/{id}/amortization": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Tableau amortissement",
+        "operationId": "getAmortizationTable",
+        "tags": [
+          "Amortization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/mortgages/{id}/discharge": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Mainlevee hypotheque",
+        "operationId": "dischargeMortgage",
+        "tags": [
+          "Discharge"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

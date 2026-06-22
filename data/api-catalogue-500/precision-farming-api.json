@@ -1,0 +1,118 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Precision Farming API",
+    "version": "1.0.0",
+    "x-api-id": "precision-farming-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Agriculture",
+    "x-domain": "Agriculture",
+    "description": "Agriculture de precision. Modulation intra-parcellaire, cartes de rendement et prescriptions variables."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/precision/{fieldId}": {
+      "parameters": [
+        {
+          "name": "fieldId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Carte prescription",
+        "operationId": "getPrescriptionMap",
+        "tags": [
+          "Precision"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Creer prescription",
+        "operationId": "createPrescription",
+        "tags": [
+          "Precision"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/precision/{fieldId}/yield-map": {
+      "parameters": [
+        {
+          "name": "fieldId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Carte rendement",
+        "operationId": "getYieldMap",
+        "tags": [
+          "YieldMap"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

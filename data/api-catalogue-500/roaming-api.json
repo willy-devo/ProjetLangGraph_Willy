@@ -1,0 +1,171 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Roaming API",
+    "version": "1.0.0",
+    "x-api-id": "roaming-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Telecom",
+    "x-domain": "Telecom",
+    "description": "Roaming international. Accords, tarifs et consommation."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/roaming/{subscriberId}": {
+      "parameters": [
+        {
+          "name": "subscriberId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut",
+        "operationId": "getRoamingStatus",
+        "tags": [
+          "Roaming"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Activer",
+        "operationId": "activateRoaming",
+        "tags": [
+          "Roaming"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Desactiver",
+        "operationId": "deactivateRoaming",
+        "tags": [
+          "Roaming"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/roaming/{subscriberId}/usage": {
+      "parameters": [
+        {
+          "name": "subscriberId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Consommation",
+        "operationId": "getRoamingUsage",
+        "tags": [
+          "Usage"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/roaming/agreements": {
+      "get": {
+        "summary": "Accords",
+        "operationId": "listRoamingAgreements",
+        "tags": [
+          "Agreements"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter",
+        "operationId": "addAgreement",
+        "tags": [
+          "Agreements"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

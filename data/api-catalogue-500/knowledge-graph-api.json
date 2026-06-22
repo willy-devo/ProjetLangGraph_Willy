@@ -1,0 +1,151 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Knowledge Graph API",
+    "version": "1.0.0",
+    "x-api-id": "knowledge-graph-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Data",
+    "x-domain": "Data",
+    "description": "Graphe de connaissances. Entites, relations et requetes SPARQL/Cypher."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/kg/entities": {
+      "get": {
+        "summary": "Entites",
+        "operationId": "listEntities",
+        "tags": [
+          "Entities"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter entite",
+        "operationId": "addEntity",
+        "tags": [
+          "Entities"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/kg/relations": {
+      "get": {
+        "summary": "Relations",
+        "operationId": "listRelations",
+        "tags": [
+          "Relations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter relation",
+        "operationId": "addRelation",
+        "tags": [
+          "Relations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/kg/query": {
+      "post": {
+        "summary": "Requeter graphe",
+        "operationId": "queryGraph",
+        "tags": [
+          "Query"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Voisins entite",
+        "operationId": "getNeighbors",
+        "tags": [
+          "Query"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

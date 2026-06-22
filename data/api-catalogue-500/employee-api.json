@@ -1,0 +1,442 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Employee API",
+    "version": "1.0.0",
+    "x-api-id": "employee-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe RH",
+    "x-domain": "Human Resources",
+    "description": "Dossiers RH des collaborateurs internes : contrats, paie, congés, évaluations. DIFFÉRENCE vs user-api : Employee = données RH sensibles (salaire, contrat). User = credentials. DIFFÉRENCE vs customer-profile-api : Employee = collaborateur interne, Customer = acheteur externe. DIFFÉRENCE vs account-api : Employee = personne physique interne, Account = organisation cliente. Accès restreint scope hr:read/write.",
+    "x-false-positive-warning": "Credentials connexion → user-api. Acheteur externe → customer-profile-api. Organisation cliente → account-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/employees": {
+      "get": {
+        "summary": "Lister les employés",
+        "operationId": "listEmployees",
+        "tags": [
+          "Employees"
+        ],
+        "parameters": [
+          {
+            "name": "department",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "on_leave",
+                "terminated"
+              ]
+            }
+          },
+          {
+            "name": "manager_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Employee"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un dossier employé (onboarding)",
+        "operationId": "createEmployee",
+        "tags": [
+          "Employees"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/employees/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^EMP-[0-9]{3}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Fiche employé complète",
+        "operationId": "getEmployee",
+        "tags": [
+          "Employees"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Employee"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier le dossier",
+        "operationId": "updateEmployee",
+        "tags": [
+          "Employees"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/employees/{id}/contracts": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique des contrats",
+        "operationId": "getContracts",
+        "tags": [
+          "Contracts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Contrats"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/employees/{id}/leaves": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Soldes et historique congés",
+        "operationId": "getLeaves",
+        "tags": [
+          "Leaves"
+        ],
+        "responses": {
+          "200": {
+            "description": "Congés"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/employees/{id}/salary": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Informations salariales (accès restreint hr:payroll)",
+        "operationId": "getSalary",
+        "tags": [
+          "Payroll"
+        ],
+        "responses": {
+          "200": {
+            "description": "Salaire"
+          },
+          "403": {
+            "description": "Scope hr:payroll requis"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EmployeeCreate": {
+        "type": "object",
+        "required": [
+          "employee_id",
+          "full_name",
+          "email",
+          "department",
+          "position",
+          "start_date"
+        ],
+        "properties": {
+          "employee_id": {
+            "type": "string",
+            "pattern": "^EMP-[0-9]{3}$"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "department": {
+            "type": "string",
+            "example": "Engineering"
+          },
+          "position": {
+            "type": "string",
+            "example": "Software Engineer"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "contract_type": {
+            "type": "string",
+            "enum": [
+              "CDI",
+              "CDD",
+              "Stage",
+              "Freelance"
+            ]
+          },
+          "manager_id": {
+            "type": "string",
+            "pattern": "^EMP-[0-9]{3}$"
+          }
+        }
+      },
+      "EmployeeUpdate": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "manager_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "on_leave",
+              "terminated"
+            ]
+          }
+        }
+      },
+      "Employee": {
+        "type": "object",
+        "properties": {
+          "employee_id": {
+            "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "contract_type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "manager_id": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

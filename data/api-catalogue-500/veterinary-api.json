@@ -1,0 +1,136 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Veterinary API",
+    "version": "1.0.0",
+    "x-api-id": "veterinary-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Agriculture",
+    "x-domain": "Agriculture",
+    "description": "Services veterinaires elevage. Visites, vaccinations et prescriptions. DIFFERENCE vs allergy-api : Veterinary = soins animaux d'elevage, Allergy = allergies patients humains.",
+    "x-false-positive-warning": "Allergies patients humains -> allergy-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/veterinary/{animalId}": {
+      "parameters": [
+        {
+          "name": "animalId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique veterinaire",
+        "operationId": "getVetHistory",
+        "tags": [
+          "Vet"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter visite",
+        "operationId": "addVetVisit",
+        "tags": [
+          "Vet"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/veterinary/{animalId}/treatments": {
+      "parameters": [
+        {
+          "name": "animalId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Traitements",
+        "operationId": "getTreatments",
+        "tags": [
+          "Treatments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Prescrire",
+        "operationId": "prescribeTreatment",
+        "tags": [
+          "Treatments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

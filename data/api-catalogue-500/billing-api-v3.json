@@ -1,0 +1,439 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Billing API",
+    "version": "3.0.0",
+    "x-api-id": "billing-api-v3",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Finance",
+    "x-domain": "Finance",
+    "description": "Version actuelle recommandée. Ajout de la facturation hybride (flat + usage), du portail client self-service complet, de la gestion des crédits et avoirs automatiques, et de l'intégration ERP native. DIFFÉRENCE vs invoice-api : Billing orchestre les cycles de paiement récurrents, Invoice génère les documents fiscaux légaux.",
+    "x-breaking-changes-from-previous": [
+      "billing_mode: flat | metered | hybrid (nouveau enum étendu)",
+      "credits: gestion des crédits et avoirs au niveau abonnement",
+      "erp_sync: synchronisation ERP native (SAP, Oracle, Sage)",
+      "proration_policy: configurable (none | day | second)",
+      "dunning_workflow: séquence de relances personnalisable",
+      "grace_period_days: période de grâce avant suspension"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/billing/subscriptions": {
+      "post": {
+        "summary": "Créer abonnement hybride (flat + usage) avec workflow de relance",
+        "operationId": "createBillingSubV3",
+        "tags": [
+          "Subscriptions"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingSubV3Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Abonnement créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les abonnements",
+        "operationId": "listBillingSubsV3",
+        "tags": [
+          "Subscriptions"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "past_due",
+                "suspended",
+                "cancelled",
+                "trialing"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Abonnements"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/billing/subscriptions/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Abonnement complet avec crédits et historique",
+        "operationId": "getBillingSubV3",
+        "tags": [
+          "Subscriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier l'abonnement (upgrade/downgrade proratisé)",
+        "operationId": "updateBillingSubV3",
+        "tags": [
+          "Subscriptions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Modifié"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Résilier avec période de grâce",
+        "operationId": "cancelBillingSubV3",
+        "tags": [
+          "Subscriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Résilié"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/billing/usage": {
+      "post": {
+        "summary": "Reporter consommation (métered billing)",
+        "operationId": "reportUsageV3",
+        "tags": [
+          "Usage"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subscription_id",
+                  "quantity",
+                  "metric"
+                ],
+                "properties": {
+                  "subscription_id": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  },
+                  "metric": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Consommation enregistrée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/billing/credits": {
+      "post": {
+        "summary": "Émettre un crédit sur un abonnement (nouveau en v3)",
+        "operationId": "issueBillingCredit",
+        "tags": [
+          "Credits"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subscription_id",
+                  "amount",
+                  "reason"
+                ],
+                "properties": {
+                  "subscription_id": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Crédit émis"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/billing/erp-sync/{subscriptionId}": {
+      "parameters": [
+        {
+          "name": "subscriptionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Forcer synchronisation ERP (SAP/Oracle/Sage — nouveau en v3)",
+        "operationId": "syncERP",
+        "tags": [
+          "ERP"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "erp_system"
+                ],
+                "properties": {
+                  "erp_system": {
+                    "type": "string",
+                    "enum": [
+                      "sap",
+                      "oracle",
+                      "sage",
+                      "cegid"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Sync ERP lancée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BillingSubV3Create": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "plan_id",
+          "payment_method",
+          "billing_mode"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "plan_id": {
+            "type": "string"
+          },
+          "payment_method": {
+            "type": "string",
+            "enum": [
+              "card",
+              "sepa",
+              "wire"
+            ]
+          },
+          "billing_mode": {
+            "type": "string",
+            "enum": [
+              "flat",
+              "metered",
+              "hybrid"
+            ],
+            "description": "Nouveau en v3"
+          },
+          "proration_policy": {
+            "type": "string",
+            "enum": [
+              "none",
+              "day",
+              "second"
+            ],
+            "default": "day"
+          },
+          "grace_period_days": {
+            "type": "integer",
+            "default": 3
+          },
+          "dunning_workflow": {
+            "type": "string",
+            "description": "ID du workflow de relance personnalisé"
+          },
+          "trial_days": {
+            "type": "integer",
+            "default": 0
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

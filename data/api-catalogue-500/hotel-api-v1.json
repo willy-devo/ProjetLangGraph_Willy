@@ -1,0 +1,63 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Hotel API",
+    "version": "1.0.0",
+    "x-api-id": "hotel-api-v1",
+    "x-api-version": "v1",
+    "x-status": "deprecated",
+    "x-team": "Equipe Tourisme",
+    "x-domain": "Tourism",
+    "description": "Hotels v1. DEPRECATED.",
+    "x-successor": "hotel-api-v3"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/hotels": {
+      "get": {
+        "summary": "Lister",
+        "operationId": "listHotelsV1",
+        "tags": [
+          "Hotels"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Pre-Order API",
+    "version": "1.0.0",
+    "x-api-id": "pre-order-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Commerce",
+    "x-domain": "E-Commerce",
+    "description": "Pré-commandes pour produits non encore disponibles. Réservation, paiement différé et notifications de disponibilité."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/pre-orders": {
+      "post": {
+        "summary": "Créer une pré-commande",
+        "operationId": "createPreOrder",
+        "tags": [
+          "PreOrders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customer_id",
+                  "product_id"
+                ],
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  },
+                  "product_id": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "default": 1
+                  },
+                  "charge_now": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Si false, paiement au moment de la disponibilité"
+                  },
+                  "card_token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pré-commande créée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pre-orders/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut d'une pré-commande",
+        "operationId": "getPreOrder",
+        "tags": [
+          "PreOrders"
+        ],
+        "responses": {
+          "200": {
+            "description": "Pré-commande"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Annuler une pré-commande",
+        "operationId": "cancelPreOrder",
+        "tags": [
+          "PreOrders"
+        ],
+        "responses": {
+          "200": {
+            "description": "Annulée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pre-orders/product/{productId}/availability": {
+      "parameters": [
+        {
+          "name": "productId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Notifier les clients en pré-commande que le produit est disponible",
+        "operationId": "notifyPreOrderAvailability",
+        "tags": [
+          "PreOrders"
+        ],
+        "responses": {
+          "202": {
+            "description": "Notifications envoyées — paiements déclenchés"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Non autorisé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Non trouvé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

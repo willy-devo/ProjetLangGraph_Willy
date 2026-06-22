@@ -1,0 +1,63 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Search API",
+    "version": "1.0.0",
+    "x-api-id": "search-api-v1",
+    "x-api-version": "v1",
+    "x-status": "deprecated",
+    "x-team": "Equipe Divers",
+    "x-domain": "Cross",
+    "description": "Moteur recherche v1. DEPRECATED.",
+    "x-successor": "search-api-v3"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/search": {
+      "get": {
+        "summary": "Rechercher",
+        "operationId": "searchV1",
+        "tags": [
+          "Search"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

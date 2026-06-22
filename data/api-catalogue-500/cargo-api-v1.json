@@ -1,0 +1,63 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Cargo API",
+    "version": "1.0.0",
+    "x-api-id": "cargo-api-v1",
+    "x-api-version": "v1",
+    "x-status": "deprecated",
+    "x-team": "Equipe Transport",
+    "x-domain": "Transport",
+    "description": "Fret v1. DEPRECATED.",
+    "x-successor": "cargo-api-v2"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/cargo": {
+      "get": {
+        "summary": "Lister",
+        "operationId": "listCargoV1",
+        "tags": [
+          "Cargo"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

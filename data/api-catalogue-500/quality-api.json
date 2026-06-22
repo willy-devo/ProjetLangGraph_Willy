@@ -1,0 +1,251 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Quality Control API",
+    "version": "1.0.0",
+    "x-api-id": "quality-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Supply",
+    "x-domain": "Supply Chain",
+    "description": "Contrôle qualité des produits reçus. Inspections, non-conformités et réclamations fournisseurs."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/quality/inspections": {
+      "post": {
+        "summary": "Créer un rapport d'inspection",
+        "operationId": "createInspection",
+        "tags": [
+          "Inspections"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "purchase_order_id",
+                  "inspector_id"
+                ],
+                "properties": {
+                  "purchase_order_id": {
+                    "type": "string"
+                  },
+                  "inspector_id": {
+                    "type": "string"
+                  },
+                  "items_inspected": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "product_id": {
+                          "type": "string"
+                        },
+                        "quantity_ok": {
+                          "type": "integer"
+                        },
+                        "quantity_nok": {
+                          "type": "integer"
+                        },
+                        "defect_type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rapport créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les inspections",
+        "operationId": "listInspections",
+        "tags": [
+          "Inspections"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "passed",
+                "failed",
+                "partial"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inspections"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/quality/non-conformities": {
+      "get": {
+        "summary": "Non-conformités en cours",
+        "operationId": "getNonConformities",
+        "tags": [
+          "NonConformities"
+        ],
+        "responses": {
+          "200": {
+            "description": "Non-conformités"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Déclarer une non-conformité",
+        "operationId": "createNonConformity",
+        "tags": [
+          "NonConformities"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "product_id",
+                  "type",
+                  "description"
+                ],
+                "properties": {
+                  "product_id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "defect",
+                      "missing",
+                      "wrong_product",
+                      "expired"
+                    ]
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "quantity_affected": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Non-conformité déclarée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Non autorisé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Non trouvé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,388 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Notification API",
+    "version": "3.0.0",
+    "x-api-id": "notification-api-v3",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Communication",
+    "description": "Version actuelle. Ajout des canaux WhatsApp et in-app, du système de règles de déclenchement (triggers), de la personnalisation IA et du rate-limiting par utilisateur. DIFFÉRENCE vs notification-api-v2 : v3 ajoute WhatsApp, les triggers événementiels et la personnalisation IA des contenus.",
+    "x-breaking-changes-from-previous": [
+      "channel enum étendu: +whatsapp, +in_app",
+      "triggers: tableau de conditions (événements déclencheurs)",
+      "ai_personalize: Boolean — active la personnalisation IA du message",
+      "user_rate_limit: limite d'envois par user/canal/jour",
+      "delivery_window: plage horaire d'envoi autorisée",
+      "template_version: versionning des templates introduit"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/notifications/send": {
+      "post": {
+        "summary": "Envoyer (email/SMS/push/WhatsApp/in-app) avec personnalisation IA",
+        "operationId": "sendNotifV3",
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifV3Send"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Envoyée"
+          },
+          "429": {
+            "description": "Rate limit utilisateur atteint"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/notifications/triggers": {
+      "post": {
+        "summary": "Créer une règle de déclenchement événementielle (nouveau en v3)",
+        "operationId": "createTrigger",
+        "tags": [
+          "Triggers"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "event",
+                  "template_id"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "event": {
+                    "type": "string",
+                    "example": "order.delivered"
+                  },
+                  "template_id": {
+                    "type": "string"
+                  },
+                  "channels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "email",
+                        "sms",
+                        "push",
+                        "whatsapp",
+                        "in_app"
+                      ]
+                    }
+                  },
+                  "delay_minutes": {
+                    "type": "integer",
+                    "default": 0
+                  },
+                  "conditions": {
+                    "type": "array",
+                    "description": "Conditions supplémentaires ex: segment=VIP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Trigger créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les règles de déclenchement",
+        "operationId": "listTriggers",
+        "tags": [
+          "Triggers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Triggers"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/notifications/in-app/{userId}": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Notifications in-app non lues d'un utilisateur (nouveau canal v3)",
+        "operationId": "getInAppNotifs",
+        "tags": [
+          "InApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Marquer en lues",
+        "operationId": "markInAppRead",
+        "tags": [
+          "InApp"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mises à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/notifications/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut et logs de livraison",
+        "operationId": "getNotifV3",
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Annuler si pending",
+        "operationId": "cancelNotifV3",
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "204": {
+            "description": "Annulée"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NotifV3Send": {
+        "type": "object",
+        "required": [
+          "user_ids",
+          "channels",
+          "template_id"
+        ],
+        "properties": {
+          "user_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms",
+                "push",
+                "whatsapp",
+                "in_app"
+              ]
+            }
+          },
+          "template_id": {
+            "type": "string"
+          },
+          "template_data": {
+            "type": "object"
+          },
+          "ai_personalize": {
+            "type": "boolean",
+            "default": false,
+            "description": "Nouveau en v3 — adapte le message au profil utilisateur"
+          },
+          "delivery_window": {
+            "type": "object",
+            "description": "Nouveau en v3 — plage horaire",
+            "properties": {
+              "from": {
+                "type": "string",
+                "example": "09:00"
+              },
+              "to": {
+                "type": "string",
+                "example": "20:00"
+              },
+              "timezone": {
+                "type": "string",
+                "default": "Europe/Paris"
+              }
+            }
+          },
+          "user_rate_limit": {
+            "type": "integer",
+            "description": "Max envois/user/canal/24h — 0 = illimité"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

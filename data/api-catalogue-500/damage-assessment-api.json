@@ -1,0 +1,172 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Damage Assessment API",
+    "version": "1.0.0",
+    "x-api-id": "damage-assessment-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Assurance",
+    "x-domain": "Insurance",
+    "description": "Expertise et évaluation des dommages. Photos IA, rapport et montant. DIFFERENCE vs insurance-claim-api : Damage Assessment = expertise technique des dégâts, Claim = processus administratif indemnisation.",
+    "x-false-positive-warning": "Processus indemnisation -> insurance-claim-api-v3."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/assessments": {
+      "get": {
+        "summary": "Expertises en cours",
+        "operationId": "listAssessments",
+        "tags": [
+          "Assessments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer expertise",
+        "operationId": "createAssessment",
+        "tags": [
+          "Assessments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/assessments/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Rapport expertise",
+        "operationId": "getAssessment",
+        "tags": [
+          "Assessments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier",
+        "operationId": "updateAssessment",
+        "tags": [
+          "Assessments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/assessments/{id}/photos": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Analyser photos IA",
+        "operationId": "analyzePhotosDamage",
+        "tags": [
+          "Photos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Rapport dégâts",
+        "operationId": "getDamageReport",
+        "tags": [
+          "Photos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

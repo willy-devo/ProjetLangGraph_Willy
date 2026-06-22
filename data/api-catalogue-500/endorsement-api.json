@@ -1,0 +1,143 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Endorsement API",
+    "version": "1.0.0",
+    "x-api-id": "endorsement-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Assurance",
+    "x-domain": "Insurance",
+    "description": "Avenants et modifications de contrats. Ajout garanties, changement données. DIFFERENCE vs policy-api : Endorsement = modification ponctuelle d'un contrat existant, Policy = gestion contrat complet.",
+    "x-false-positive-warning": "Gestion contrat complet -> policy-api-v3."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/endorsements": {
+      "get": {
+        "summary": "Avenants en cours",
+        "operationId": "listEndorsements",
+        "tags": [
+          "Endorsements"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer avenant",
+        "operationId": "createEndorsement",
+        "tags": [
+          "Endorsements"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/endorsements/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Detail avenant",
+        "operationId": "getEndorsement",
+        "tags": [
+          "Endorsements"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Approuver",
+        "operationId": "approveEndorsement",
+        "tags": [
+          "Endorsements"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Annuler",
+        "operationId": "cancelEndorsement",
+        "tags": [
+          "Endorsements"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

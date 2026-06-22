@@ -1,0 +1,153 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "DDoS Protection API",
+    "version": "1.0.0",
+    "x-api-id": "ddos-protection-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Cybersécurité",
+    "x-domain": "Cybersecurity",
+    "description": "Protection contre les attaques DDoS. Detection, mitigation et rapports."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/ddos/status": {
+      "get": {
+        "summary": "Statut protection",
+        "operationId": "getDDoSStatus",
+        "tags": [
+          "Status"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/ddos/attacks": {
+      "get": {
+        "summary": "Attaques détectées",
+        "operationId": "listDDoSAttacks",
+        "tags": [
+          "Attacks"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Signaler attaque",
+        "operationId": "reportDDoSAttack",
+        "tags": [
+          "Attacks"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/ddos/rules": {
+      "get": {
+        "summary": "Règles mitigation",
+        "operationId": "getDDoSRules",
+        "tags": [
+          "Rules"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter règle",
+        "operationId": "addDDoSRule",
+        "tags": [
+          "Rules"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/ddos/reports": {
+      "get": {
+        "summary": "Rapport protection",
+        "operationId": "getDDoSReport",
+        "tags": [
+          "Reports"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

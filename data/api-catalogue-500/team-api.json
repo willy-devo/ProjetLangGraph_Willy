@@ -1,0 +1,416 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Team API",
+    "version": "1.0.0",
+    "x-api-id": "team-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Operations",
+    "description": "Équipes de travail transverses et fonctionnelles. Création, membres et canaux de communication d'équipe. DIFFÉRENCE vs hr-api : Team API gère les équipes de travail fonctionnelles (equipe projet, squad produit), HR API gère les dossiers administratifs RH et la structure hiérarchique. DIFFÉRENCE vs account-api : Team = équipe interne de collaborateurs, Account = organisation cliente externe B2B. DIFFÉRENCE vs org-api : Team = équipe de travail opérationnelle, Org = entité juridique de l'entreprise.",
+    "x-false-positive-warning": "Structure hiérarchique et dossiers RH → hr-api. Organisation légale → org-api. Compte client B2B → account-api. Projet structuré → project-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/teams": {
+      "post": {
+        "summary": "Créer une équipe",
+        "operationId": "createTeam",
+        "tags": [
+          "Teams"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Équipe créée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les équipes",
+        "operationId": "listTeams",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "squad",
+                "chapter",
+                "tribe",
+                "functional",
+                "project"
+              ]
+            }
+          },
+          {
+            "name": "member_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Équipes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/teams/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Équipe avec membres et KPIs",
+        "operationId": "getTeam",
+        "tags": [
+          "Teams"
+        ],
+        "responses": {
+          "200": {
+            "description": "Équipe"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour l'équipe",
+        "operationId": "updateTeam",
+        "tags": [
+          "Teams"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Dissoudre une équipe",
+        "operationId": "deleteTeam",
+        "tags": [
+          "Teams"
+        ],
+        "responses": {
+          "204": {
+            "description": "Dissoute"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/teams/{id}/members": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Membres de l'équipe",
+        "operationId": "getTeamMembers",
+        "tags": [
+          "Members"
+        ],
+        "responses": {
+          "200": {
+            "description": "Membres"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter un membre",
+        "operationId": "addTeamMember",
+        "tags": [
+          "Members"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "role"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "lead",
+                      "member",
+                      "observer"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Membre ajouté"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/teams/{id}/members/{userId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "summary": "Retirer un membre",
+        "operationId": "removeTeamMember",
+        "tags": [
+          "Members"
+        ],
+        "responses": {
+          "204": {
+            "description": "Retiré"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/teams/{id}/metrics": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "KPIs de l'équipe (vélocité, tâches complétées, OKRs)",
+        "operationId": "getTeamMetrics",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "2026-Q2"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "KPIs équipe"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TeamCreate": {
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "squad",
+              "chapter",
+              "tribe",
+              "functional",
+              "project"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "lead_id": {
+            "type": "string"
+          },
+          "parent_team_id": {
+            "type": "string",
+            "description": "Équipe parente (ex: tribe → squad)"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

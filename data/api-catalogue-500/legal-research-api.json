@@ -1,0 +1,134 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Legal Research API",
+    "version": "1.0.0",
+    "x-api-id": "legal-research-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Legal",
+    "x-domain": "Legal",
+    "description": "Recherche juridique. Jurisprudence, textes de loi et doctrine."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/legal-research/jurisprudence": {
+      "post": {
+        "summary": "Rechercher jurisprudence",
+        "operationId": "searchJurisprudence",
+        "tags": [
+          "Jurisprudence"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Décisions recentes",
+        "operationId": "getLatestDecisions",
+        "tags": [
+          "Jurisprudence"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/legal-research/statutes": {
+      "post": {
+        "summary": "Rechercher textes de loi",
+        "operationId": "searchStatutes",
+        "tags": [
+          "Statutes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Texte officiel",
+        "operationId": "getStatute",
+        "tags": [
+          "Statutes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/legal-research/doctrine": {
+      "post": {
+        "summary": "Rechercher doctrine",
+        "operationId": "searchDoctrine",
+        "tags": [
+          "Doctrine"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

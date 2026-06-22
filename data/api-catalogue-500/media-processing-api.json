@@ -1,0 +1,352 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Media Processing API",
+    "version": "1.0.0",
+    "x-api-id": "media-processing-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Infrastructure",
+    "description": "Pipeline de traitement multimédia. Transcodage vidéo, OCR sur images/PDF, watermarking, compression et détection de contenu. DIFFÉRENCE vs media-api : Media API gère le stockage, CDN et le resize simple d'images, Media Processing API effectue des transformations complexes (transcodage vidéo, OCR, watermark, détection IA de contenu). DIFFÉRENCE vs file-storage-api : File Storage = stockage générique, Media Processing = traitement et transformation du contenu multimédia.",
+    "x-false-positive-warning": "Stockage et CDN images → media-api. Stockage fichiers génériques → file-storage-api. Génération de documents → document-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/media-processing/transcode": {
+      "post": {
+        "summary": "Transcoder une vidéo (MP4, WebM, HLS, DASH)",
+        "operationId": "transcodeVideo",
+        "tags": [
+          "Video"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source_url",
+                  "output_format"
+                ],
+                "properties": {
+                  "source_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "output_format": {
+                    "type": "string",
+                    "enum": [
+                      "mp4",
+                      "webm",
+                      "hls",
+                      "dash"
+                    ]
+                  },
+                  "resolutions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "360p",
+                        "480p",
+                        "720p",
+                        "1080p",
+                        "4k"
+                      ]
+                    }
+                  },
+                  "thumbnail_at_seconds": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Transcodage lancé — job_id retourné"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/media-processing/ocr": {
+      "post": {
+        "summary": "OCR sur image ou PDF — extraction de texte",
+        "operationId": "runOCR",
+        "tags": [
+          "OCR"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source_url"
+                ],
+                "properties": {
+                  "source_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "language": {
+                    "type": "string",
+                    "default": "fr"
+                  },
+                  "output_format": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "json",
+                      "pdf_searchable"
+                    ],
+                    "default": "json"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Texte extrait avec coordonnées des blocs"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/media-processing/watermark": {
+      "post": {
+        "summary": "Ajouter un watermark (texte ou logo) sur image ou vidéo",
+        "operationId": "addWatermark",
+        "tags": [
+          "Image"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source_url",
+                  "watermark"
+                ],
+                "properties": {
+                  "source_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "watermark": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "text",
+                          "image"
+                        ]
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "top_left",
+                          "top_right",
+                          "center",
+                          "bottom_right"
+                        ]
+                      },
+                      "opacity": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1,
+                        "default": 0.7
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Média avec watermark — URL retournée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/media-processing/detect-content": {
+      "post": {
+        "summary": "Détection IA de contenu inapproprié (nudité, violence, NSFW)",
+        "operationId": "detectContent",
+        "tags": [
+          "AI"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source_url"
+                ],
+                "properties": {
+                  "source_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "checks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "nudity",
+                        "violence",
+                        "hate_symbol",
+                        "spam"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Résultats de détection avec scores de confiance"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/media-processing/jobs/{jobId}": {
+      "parameters": [
+        {
+          "name": "jobId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut d'un job de traitement asynchrone",
+        "operationId": "getProcessingJob",
+        "tags": [
+          "Jobs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statut du job (pending/processing/done/failed)"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Discharge API",
+    "version": "1.0.0",
+    "x-api-id": "discharge-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Santé",
+    "x-domain": "Healthcare",
+    "description": "Sortie du patient. Document de sortie, ordonnances de sortie et transmission médecin traitant."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/discharge/{patientId}": {
+      "parameters": [
+        {
+          "name": "patientId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Initier sortie",
+        "operationId": "initiateDischarge",
+        "tags": [
+          "Discharge"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Statut",
+        "operationId": "getDischargeStatus",
+        "tags": [
+          "Discharge"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/discharge/{patientId}/document": {
+      "parameters": [
+        {
+          "name": "patientId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Document PDF",
+        "operationId": "getDocument",
+        "tags": [
+          "Documents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Générer",
+        "operationId": "generateDocument",
+        "tags": [
+          "Documents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/discharge/{patientId}/prescriptions": {
+      "parameters": [
+        {
+          "name": "patientId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Ordonnances sortie",
+        "operationId": "getDischargePrescriptions",
+        "tags": [
+          "Prescriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Ressource non trouvée"
+      },
+      "BadRequest": {
+        "description": "Données invalides"
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

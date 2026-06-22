@@ -1,0 +1,324 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Inventory API",
+    "version": "2.0.0",
+    "x-api-id": "inventory-api-v2",
+    "x-api-version": "v2",
+    "x-status": "deprecated",
+    "x-team": "Equipe Logistique",
+    "x-domain": "Supply Chain",
+    "description": "Version 2 inventaire — DEPRECATED depuis 2023, migrer vers v3. Introduit les alertes de seuil configurables, l'historique des mouvements et le support multi-entrepôt basique. Incompatible avec v1 (IDs entiers → string ITEM-XXX).",
+    "x-breaking-changes-from-previous": [
+      "ID integer → string ITEM-XXX",
+      "Alertes de seuil ajoutées",
+      "Historique mouvements par produit",
+      "Support multi-entrepôt basique (warehouse_id)"
+    ],
+    "x-breaking-changes-in-next": [
+      "Réapprovisionnement automatique déplacé vers endpoint dédié /restock",
+      "Mouvements de stock → PATCH /stock au lieu de PUT",
+      "Alertes → sous-ressource /alerts séparée",
+      "Support multi-devise sur les coûts"
+    ],
+    "x-successor": "inventory-api"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/inventory": {
+      "get": {
+        "summary": "Inventaire global avec filtres entrepôt",
+        "operationId": "listInventoryV2",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "below_threshold",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inventaire"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/inventory/{itemId}": {
+      "parameters": [
+        {
+          "name": "itemId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^ITEM-[0-9]{3}$"
+          },
+          "description": "BREAKING v2: string ITEM-XXX au lieu d'integer"
+        }
+      ],
+      "get": {
+        "summary": "Stock d'un produit",
+        "operationId": "getInventoryV2",
+        "tags": [
+          "Inventory"
+        ],
+        "responses": {
+          "200": {
+            "description": "Stock"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour le stock (BREAKING v3: remplacé par PATCH /stock)",
+        "operationId": "updateInventoryV2",
+        "tags": [
+          "Inventory"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "quantity",
+                  "operation"
+                ],
+                "properties": {
+                  "quantity": {
+                    "type": "integer"
+                  },
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "set",
+                      "add",
+                      "subtract"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/inventory/{itemId}/movements": {
+      "parameters": [
+        {
+          "name": "itemId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique des mouvements de stock (nouveau en v2)",
+        "operationId": "getMovementsV2",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mouvements"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/inventory/alerts": {
+      "post": {
+        "summary": "Configurer alerte de seuil bas (nouveau en v2)",
+        "operationId": "createAlertV2",
+        "tags": [
+          "Alerts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "item_id",
+                  "threshold"
+                ],
+                "properties": {
+                  "item_id": {
+                    "type": "string"
+                  },
+                  "threshold": {
+                    "type": "integer"
+                  },
+                  "notify_email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alerte configurée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les alertes configurées",
+        "operationId": "listAlertsV2",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Alertes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

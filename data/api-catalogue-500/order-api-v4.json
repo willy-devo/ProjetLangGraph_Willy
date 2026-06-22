@@ -1,0 +1,793 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Order API",
+    "version": "4.0.0",
+    "x-api-id": "order-api",
+    "x-api-version": "v4",
+    "x-status": "active",
+    "x-team": "Equipe Commerce",
+    "x-domain": "E-Commerce",
+    "description": "Version actuelle et recommandée. Gestion complète du cycle de vie des commandes e-commerce. Multi-articles, multi-devises, webhooks automatiques, expédition partielle. Utiliser cette version pour tous les nouveaux développements.",
+    "x-breaking-changes-from-previous": [
+      "items→order_lines (renommage)",
+      "total_price→amount_due",
+      "currency obligatoire (ISO 4217)",
+      "Webhooks automatiques sur changement de statut",
+      "/ship supprimé→PATCH /status",
+      "Suppression uniquement pour statut cancelled"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v4/orders": {
+      "post": {
+        "summary": "Créer une commande complète",
+        "operationId": "createOrderV4",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderV4Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Commande créée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderV4"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "description": "Stock insuffisant ou produit indisponible"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister avec filtres complets et tri",
+        "operationId": "listOrdersV4",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^CUST-[0-9]{3}$"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed",
+                "processing",
+                "partially_shipped",
+                "shipped",
+                "delivered",
+                "cancelled",
+                "refunded"
+              ]
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "EUR"
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "created_at_asc",
+                "created_at_desc",
+                "amount_due_asc",
+                "amount_due_desc"
+              ],
+              "default": "created_at_desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste paginée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderV4List"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v4/orders/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^ORD-[0-9]{4}$"
+          },
+          "example": "ORD-0042"
+        }
+      ],
+      "get": {
+        "summary": "Récupérer une commande avec détails complets",
+        "operationId": "getOrderV4",
+        "tags": [
+          "Orders"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderV4"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier une commande (avant confirmation uniquement)",
+        "operationId": "updateOrderV4",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderV4Update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Modifiée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderV4"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Supprimer (statut cancelled uniquement)",
+        "operationId": "deleteOrderV4",
+        "tags": [
+          "Orders"
+        ],
+        "responses": {
+          "204": {
+            "description": "Supprimée"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v4/orders/{id}/cancel": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Annuler et rembourser",
+        "operationId": "cancelOrderV4",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "customer_request",
+                      "out_of_stock",
+                      "fraud_detected",
+                      "duplicate"
+                    ]
+                  },
+                  "refund": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "refund_method": {
+                    "type": "string",
+                    "enum": [
+                      "original_payment",
+                      "wallet_credit"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Annulée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderV4"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v4/orders/{id}/status": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "patch": {
+        "summary": "Mettre à jour le statut (expédition, livraison) — webhook déclenché automatiquement",
+        "operationId": "updateOrderStatusV4",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "confirmed",
+                      "processing",
+                      "partially_shipped",
+                      "shipped",
+                      "delivered"
+                    ]
+                  },
+                  "tracking_number": {
+                    "type": "string"
+                  },
+                  "line_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Pour expédition partielle"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statut mis à jour — webhook déclenché"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v4/orders/{id}/refund": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Rembourser une commande livrée (total ou partiel)",
+        "operationId": "refundOrderV4",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "line_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Remboursement partiel par ligne"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "original_payment",
+                      "wallet_credit"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remboursement initié"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ShippingAddress": {
+        "type": "object",
+        "required": [
+          "street",
+          "city",
+          "zip",
+          "country"
+        ],
+        "properties": {
+          "street": {
+            "type": "string",
+            "example": "12 rue de la Paix"
+          },
+          "city": {
+            "type": "string",
+            "example": "Paris"
+          },
+          "zip": {
+            "type": "string",
+            "example": "75001"
+          },
+          "country": {
+            "type": "string",
+            "example": "FR"
+          },
+          "additional": {
+            "type": "string"
+          },
+          "contact_phone": {
+            "type": "string",
+            "example": "+33612345678"
+          }
+        }
+      },
+      "Discount": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ]
+          },
+          "value": {
+            "type": "number"
+          },
+          "applied_amount": {
+            "type": "number"
+          }
+        }
+      },
+      "OrderLine": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "quantity",
+          "unit_price"
+        ],
+        "properties": {
+          "line_id": {
+            "type": "string",
+            "example": "LINE-001"
+          },
+          "product_id": {
+            "type": "string",
+            "example": "PROD-001"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "line_total": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "shipped",
+              "delivered",
+              "refunded"
+            ]
+          }
+        }
+      },
+      "OrderV4Create": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "order_lines",
+          "shipping",
+          "currency"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "pattern": "^CUST-[0-9]{3}$",
+            "example": "CUST-042"
+          },
+          "order_lines": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            },
+            "description": "Remplace 'items' de v2/v3"
+          },
+          "shipping": {
+            "$ref": "#/components/schemas/ShippingAddress"
+          },
+          "currency": {
+            "type": "string",
+            "description": "ISO 4217 — nouveau champ obligatoire en v4",
+            "example": "EUR"
+          },
+          "discount": {
+            "$ref": "#/components/schemas/Discount"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "OrderV4Update": {
+        "type": "object",
+        "properties": {
+          "shipping": {
+            "$ref": "#/components/schemas/ShippingAddress"
+          },
+          "order_lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            }
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderV4": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^ORD-[0-9]{4}$",
+            "example": "ORD-0042"
+          },
+          "customer_id": {
+            "type": "string",
+            "example": "CUST-042"
+          },
+          "order_lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            }
+          },
+          "shipping": {
+            "$ref": "#/components/schemas/ShippingAddress"
+          },
+          "discount": {
+            "$ref": "#/components/schemas/Discount"
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR"
+          },
+          "subtotal": {
+            "type": "number",
+            "example": 89.97
+          },
+          "discount_amount": {
+            "type": "number",
+            "example": 9.0
+          },
+          "amount_due": {
+            "type": "number",
+            "example": 80.97,
+            "description": "Renommé depuis total_price de v3"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "processing",
+              "partially_shipped",
+              "shipped",
+              "delivered",
+              "cancelled",
+              "refunded"
+            ]
+          },
+          "tracking_number": {
+            "type": "string"
+          },
+          "webhook_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_modified_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OrderV4List": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderV4"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "page": {
+                "type": "integer"
+              },
+              "per_page": {
+                "type": "integer"
+              },
+              "total_pages": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

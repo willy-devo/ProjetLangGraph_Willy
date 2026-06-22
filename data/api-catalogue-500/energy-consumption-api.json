@@ -1,0 +1,147 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Energy Consumption API",
+    "version": "1.0.0",
+    "x-api-id": "energy-consumption-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe IoT",
+    "x-domain": "IoT",
+    "description": "Consommation énergétique bâtiments et installations. Courbes de charge et optimisation."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/consumption/{siteId}": {
+      "parameters": [
+        {
+          "name": "siteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Consommation actuelle",
+        "operationId": "getConsumption",
+        "tags": [
+          "Consumption"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Enregistrer",
+        "operationId": "recordConsumption",
+        "tags": [
+          "Consumption"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/consumption/{siteId}/history": {
+      "parameters": [
+        {
+          "name": "siteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique",
+        "operationId": "getConsumptionHistory",
+        "tags": [
+          "History"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/consumption/{siteId}/forecast": {
+      "parameters": [
+        {
+          "name": "siteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Prévisions consommation",
+        "operationId": "forecastConsumption",
+        "tags": [
+          "Forecast"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

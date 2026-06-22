@@ -1,0 +1,443 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Notification API",
+    "version": "1.0.0",
+    "x-api-id": "notification-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Communication",
+    "description": "Orchestrateur de notifications multicanal (email, SMS, push) vers les utilisateurs finaux. DIFFÉRENCE vs email-api : Notification = façade multi-canal, Email = canal email seul avec templates. DIFFÉRENCE vs messaging-api : Notification = unidirectionnel (système→user), Messaging = bidirectionnel (user↔user). DIFFÉRENCE vs alert-api : Notification cible les clients, Alert cible les équipes ops. DIFFÉRENCE vs sms-api : Notification orchestre tous les canaux, SMS = canal SMS seul.",
+    "x-false-positive-warning": "Email uniquement→email-api. SMS uniquement→sms-api. Push uniquement→push-api. Chat bidirectionnel→messaging-api. Alertes ops→alert-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/notifications/send": {
+      "post": {
+        "summary": "Envoyer une notification immédiate multicanal",
+        "operationId": "sendNotification",
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSend"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Envoyée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/notifications/schedule": {
+      "post": {
+        "summary": "Planifier une notification future",
+        "operationId": "scheduleNotification",
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSchedule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Planifiée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/notifications/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut d'une notification",
+        "operationId": "getNotification",
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Annuler (statut pending uniquement)",
+        "operationId": "cancelNotification",
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "204": {
+            "description": "Annulée"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/notifications": {
+      "get": {
+        "summary": "Lister avec filtres",
+        "operationId": "listNotifications",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "sent",
+                "failed",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms",
+                "push"
+              ]
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/notifications/stats": {
+      "get": {
+        "summary": "Statistiques d'envoi par canal",
+        "operationId": "getNotifStats",
+        "tags": [
+          "Stats"
+        ],
+        "responses": {
+          "200": {
+            "description": "Stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationStats"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NotificationSend": {
+        "type": "object",
+        "required": [
+          "user_ids",
+          "channel",
+          "title",
+          "message"
+        ],
+        "properties": {
+          "user_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "USR-001",
+              "USR-002"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "push"
+            ],
+            "example": "email"
+          },
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      },
+      "NotificationSchedule": {
+        "type": "object",
+        "required": [
+          "user_ids",
+          "channel",
+          "title",
+          "message",
+          "scheduled_at"
+        ],
+        "properties": {
+          "user_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "push"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-05-01T09:00:00Z"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "NOTIF-001"
+          },
+          "user_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "channel": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "sent",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "NotificationStats": {
+        "type": "object",
+        "properties": {
+          "total_sent": {
+            "type": "integer"
+          },
+          "success_rate": {
+            "type": "number"
+          },
+          "failure_rate": {
+            "type": "number"
+          },
+          "by_channel": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "integer"
+              },
+              "sms": {
+                "type": "integer"
+              },
+              "push": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

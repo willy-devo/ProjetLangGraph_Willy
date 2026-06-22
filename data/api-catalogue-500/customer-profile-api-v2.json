@@ -1,0 +1,357 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Customer Profile API",
+    "version": "2.0.0",
+    "x-api-id": "customer-profile-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe CRM",
+    "x-domain": "CRM & Marketing",
+    "description": "Version 2 du profil client. Enrichit avec score de propension, tags comportementaux et champs RGPD explicites. DIFFÉRENCE vs v1 : ajout propensity_score, behavioral_tags, consent_status et historique des segments.",
+    "x-breaking-changes-from-previous": [
+      "metadata imbriqué → champs à plat au niveau racine",
+      "interests → behavioral_tags (renommage)",
+      "Nouveau champ obligatoire: consent_status",
+      "segment_history ajouté"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/customers": {
+      "get": {
+        "summary": "Lister avec filtres enrichis (score, tags, consentement)",
+        "operationId": "listCustomersV2",
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [
+          {
+            "name": "segment",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "VIP",
+                "Standard",
+                "Nouveau"
+              ]
+            }
+          },
+          {
+            "name": "min_propensity",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          {
+            "name": "consent_status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "granted",
+                "revoked",
+                "pending"
+              ]
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un profil client v2",
+        "operationId": "createCustomerV2",
+        "tags": [
+          "Customers"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerV2Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/customers/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^CUST-[0-9]{3}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Profil enrichi d'un client",
+        "operationId": "getCustomerV2",
+        "tags": [
+          "Customers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour le profil",
+        "operationId": "updateCustomerV2",
+        "tags": [
+          "Customers"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/customers/{id}/segment-history": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique des changements de segment",
+        "operationId": "getSegmentHistory",
+        "tags": [
+          "Customers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Historique"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/customers/{id}/propensity": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Score de propension à l'achat (ML)",
+        "operationId": "getPropensityScore",
+        "tags": [
+          "Customers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Score 0-1"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomerV2Create": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "full_name",
+          "email",
+          "segment",
+          "consent_status"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "pattern": "^CUST-[0-9]{3}$"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "segment": {
+            "type": "string",
+            "enum": [
+              "VIP",
+              "Standard",
+              "Nouveau"
+            ]
+          },
+          "consent_status": {
+            "type": "string",
+            "enum": [
+              "granted",
+              "revoked",
+              "pending"
+            ]
+          },
+          "behavioral_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Remplace 'interests' de v1"
+          },
+          "loyalty_points": {
+            "type": "integer",
+            "default": 0
+          },
+          "city": {
+            "type": "string"
+          },
+          "preferred_language": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Certificate Management API",
+    "version": "1.0.0",
+    "x-api-id": "certificate-management-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Cybersécurité",
+    "x-domain": "Cybersecurity",
+    "description": "Gestion certificats SSL/TLS. Émission, renouvellement et révocation. DIFFERENCE vs key-rotation-api : Certificate Management = certificats X.509 PKI, Key Rotation = rotation clés cryptographiques.",
+    "x-false-positive-warning": "Rotation clés crypto -> key-rotation-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/certificates": {
+      "get": {
+        "summary": "Certificats actifs",
+        "operationId": "listCertificates",
+        "tags": [
+          "Certs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Émettre certificat",
+        "operationId": "issueCertificate",
+        "tags": [
+          "Certs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/certificates/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Detail certificat",
+        "operationId": "getCertificate",
+        "tags": [
+          "Certs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Renouveler",
+        "operationId": "renewCertificate",
+        "tags": [
+          "Certs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Révoquer",
+        "operationId": "revokeCertificate",
+        "tags": [
+          "Certs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/certificates/expiring": {
+      "get": {
+        "summary": "Certificats expirant bientôt",
+        "operationId": "getExpiringCerts",
+        "tags": [
+          "Expiring"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

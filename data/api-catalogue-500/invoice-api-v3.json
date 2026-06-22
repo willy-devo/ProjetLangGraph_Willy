@@ -1,0 +1,473 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Invoice API",
+    "version": "3.0.0",
+    "x-api-id": "invoice-api-v3",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Finance",
+    "x-domain": "Finance",
+    "description": "Version 3 de l'API facture — version actuelle recommandée. Ajout de la facturation récurrente native, des pénalités de retard automatiques et de l'intégration comptable (exports FEC, DATEV). DIFFÉRENCE vs billing-api : Invoice génère et archive les documents fiscaux légaux, Billing orchestre les prélèvements automatiques.",
+    "x-breaking-changes-from-previous": [
+      "recurring (objet) remplace le champ externe billing_subscription_id",
+      "late_payment_penalty ajouté (calcul automatique J+30)",
+      "accounting_export_format: FEC | DATEV | SAGE | CEGID",
+      "line_items renommé items (uniformisation avec v3)",
+      "status 'overdue' ajouté (automatique après due_date)",
+      "Signature eIDAS désormais obligatoire pour B2B > 10 000 €"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/invoices": {
+      "post": {
+        "summary": "Générer facture avec récurrence et export comptable",
+        "operationId": "createInvoiceV3",
+        "tags": [
+          "Invoices"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceV3Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Facture générée"
+          },
+          "402": {
+            "description": "Paiement requis pour activation récurrence"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister factures avec filtres avancés",
+        "operationId": "listInvoicesV3",
+        "tags": [
+          "Invoices"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "sent",
+                "paid",
+                "void",
+                "overdue"
+              ]
+            }
+          },
+          {
+            "name": "overdue_only",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Factures"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/invoices/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^INV-[0-9]{4}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Facture complète avec statut pénalité",
+        "operationId": "getInvoiceV3",
+        "tags": [
+          "Invoices"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/invoices/{id}/pdf": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "PDF multilingue, signé eIDAS si B2B > 10k€",
+        "operationId": "downloadInvoiceV3PDF",
+        "tags": [
+          "Invoices"
+        ],
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "fr"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/invoices/{id}/accounting-export": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Export comptable (FEC / DATEV / SAGE / CEGID) — nouveau en v3",
+        "operationId": "exportAccountingV3",
+        "tags": [
+          "Accounting"
+        ],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FEC",
+                "DATEV",
+                "SAGE",
+                "CEGID"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fichier comptable"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/invoices/{id}/penalty": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Appliquer manuellement une pénalité de retard",
+        "operationId": "applyPenaltyV3",
+        "tags": [
+          "Invoices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rate": {
+                    "type": "number",
+                    "description": "Taux annuel, ex: 0.12 = 12%"
+                  },
+                  "auto_calculate": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pénalité appliquée et facture mise à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/invoices/{id}/void": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Annuler (génère avoir + pénalité réversée si applicable)",
+        "operationId": "voidInvoiceV3",
+        "tags": [
+          "Invoices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Annulée — avoir généré"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "InvoiceV3Create": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "items",
+          "currency",
+          "locale"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "unit_price": {
+                  "type": "number"
+                },
+                "tax_rate": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR"
+          },
+          "locale": {
+            "type": "string",
+            "example": "fr"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "recurring": {
+            "type": "object",
+            "description": "Nouveau en v3 — remplace billing_subscription_id",
+            "properties": {
+              "frequency": {
+                "type": "string",
+                "enum": [
+                  "monthly",
+                  "quarterly",
+                  "annually"
+                ]
+              },
+              "start_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "end_date": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          },
+          "accounting_export_format": {
+            "type": "string",
+            "enum": [
+              "FEC",
+              "DATEV",
+              "SAGE",
+              "CEGID"
+            ],
+            "description": "Nouveau en v3"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

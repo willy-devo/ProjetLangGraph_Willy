@@ -1,0 +1,176 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Hospital Bed API",
+    "version": "1.0.0",
+    "x-api-id": "hospital-bed-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Santé",
+    "x-domain": "Healthcare",
+    "description": "Capacitaire hospitalier. Disponibilité des lits par service, admissions et taux d'occupation."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/beds": {
+      "get": {
+        "summary": "Lits disponibles",
+        "operationId": "listBeds",
+        "tags": [
+          "Beds"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Admettre dans un lit",
+        "operationId": "admitPatient",
+        "tags": [
+          "Beds"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/beds/{bedId}": {
+      "parameters": [
+        {
+          "name": "bedId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut lit",
+        "operationId": "getBed",
+        "tags": [
+          "Beds"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Changer statut",
+        "operationId": "updateBedStatus",
+        "tags": [
+          "Beds"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Libérer",
+        "operationId": "releaseBed",
+        "tags": [
+          "Beds"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/beds/occupancy": {
+      "get": {
+        "summary": "Taux d'occupation",
+        "operationId": "getOccupancy",
+        "tags": [
+          "Stats"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Ressource non trouvée"
+      },
+      "BadRequest": {
+        "description": "Données invalides"
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

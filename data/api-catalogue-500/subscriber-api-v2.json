@@ -1,0 +1,109 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Subscriber API",
+    "version": "2.0.0",
+    "x-api-id": "subscriber-api-v2",
+    "x-api-version": "v2",
+    "x-status": "deprecated",
+    "x-team": "Equipe Telecom",
+    "x-domain": "Telecom",
+    "description": "Abonnes v2 avec portabilite. DEPRECATED.",
+    "x-successor": "subscriber-api-v3"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v2/subscribers": {
+      "get": {
+        "summary": "Lister",
+        "operationId": "listSubscribersV2",
+        "tags": [
+          "Subscribers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Creer",
+        "operationId": "createSubscriberV2",
+        "tags": [
+          "Subscribers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/subscribers/{id}/portability": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Porter numero",
+        "operationId": "portNumberV2",
+        "tags": [
+          "Portability"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

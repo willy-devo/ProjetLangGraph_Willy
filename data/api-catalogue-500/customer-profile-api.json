@@ -1,0 +1,519 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Customer Profile API",
+    "version": "1.0.0",
+    "x-api-id": "customer-profile-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe CRM",
+    "x-domain": "CRM & Marketing",
+    "description": "Profils commerciaux clients : segmentation VIP/Standard, points fidélité, historique d'achat, préférences marketing, conformité RGPD. DIFFÉRENCE vs user-api : Customer Profile = données commerciales, User = credentials techniques. DIFFÉRENCE vs account-api : Customer = particulier B2C, Account = entreprise B2B. DIFFÉRENCE vs employee-api : Customer = acheteur externe, Employee = collaborateur interne.",
+    "x-false-positive-warning": "Credentials login → user-api. Organisation B2B → account-api. Collaborateur interne → employee-api.",
+    "x-depends-on": [
+      "user-api"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/customers": {
+      "get": {
+        "summary": "Lister les profils clients",
+        "operationId": "listCustomers",
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [
+          {
+            "name": "segment",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "VIP",
+                "Standard",
+                "Nouveau"
+              ]
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "interest",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_loyalty_points",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "customers": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CustomerProfile"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un profil commercial client",
+        "operationId": "createCustomer",
+        "tags": [
+          "Customers"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerProfileCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfile"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/customers/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^CUST-[0-9]{3}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Récupérer un profil client",
+        "operationId": "getCustomer",
+        "tags": [
+          "Customers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfile"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour le profil",
+        "operationId": "updateCustomer",
+        "tags": [
+          "Customers"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerProfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/customers/{id}/segment": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Changer le segment commercial (VIP/Standard/Nouveau)",
+        "operationId": "updateSegment",
+        "tags": [
+          "Customers"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "segment"
+                ],
+                "properties": {
+                  "segment": {
+                    "type": "string",
+                    "enum": [
+                      "VIP",
+                      "Standard",
+                      "Nouveau"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Segment mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/customers/{id}/gdpr/delete": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "summary": "Droit à l'oubli RGPD — anonymisation sous 72h",
+        "operationId": "gdprDelete",
+        "tags": [
+          "RGPD"
+        ],
+        "responses": {
+          "202": {
+            "description": "Anonymisation planifiée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/customers/{id}/purchase-history": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique d'achat agrégé",
+        "operationId": "getPurchaseHistory",
+        "tags": [
+          "Customers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Historique"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomerProfileCreate": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "full_name",
+          "email",
+          "segment"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "pattern": "^CUST-[0-9]{3}$",
+            "example": "CUST-001"
+          },
+          "full_name": {
+            "type": "string",
+            "example": "Jean Dupont"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "segment": {
+            "type": "string",
+            "enum": [
+              "VIP",
+              "Standard",
+              "Nouveau"
+            ]
+          },
+          "loyalty_points": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Gaming",
+              "Streaming"
+            ]
+          },
+          "city": {
+            "type": "string"
+          },
+          "preferred_language": {
+            "type": "string",
+            "example": "fr"
+          }
+        }
+      },
+      "CustomerProfileUpdate": {
+        "type": "object",
+        "properties": {
+          "segment": {
+            "type": "string",
+            "enum": [
+              "VIP",
+              "Standard",
+              "Nouveau"
+            ]
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "city": {
+            "type": "string"
+          },
+          "loyalty_points": {
+            "type": "integer"
+          }
+        }
+      },
+      "CustomerProfile": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "example": "CUST-001"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "segment": {
+            "type": "string",
+            "enum": [
+              "VIP",
+              "Standard",
+              "Nouveau"
+            ]
+          },
+          "loyalty_points": {
+            "type": "integer"
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "city": {
+            "type": "string"
+          },
+          "total_orders": {
+            "type": "integer"
+          },
+          "total_spent": {
+            "type": "number"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "account_created": {
+                "type": "string",
+                "format": "date"
+              },
+              "preferred_language": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

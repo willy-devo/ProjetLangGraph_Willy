@@ -1,0 +1,182 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Rent Collection API",
+    "version": "1.0.0",
+    "x-api-id": "rent-collection-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Immobilier",
+    "x-domain": "RealEstate",
+    "description": "Collecte loyers et charges. Quittances, relances et comptabilité. DIFFERENCE vs billing-api : Rent Collection = loyers immobiliers avec quittances, Billing = abonnements et facturation générique.",
+    "x-false-positive-warning": "Facturation générique -> billing-api-v3."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/rent/{leaseId}": {
+      "parameters": [
+        {
+          "name": "leaseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut loyer",
+        "operationId": "getRentStatus",
+        "tags": [
+          "Rent"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Enregistrer paiement",
+        "operationId": "recordPayment",
+        "tags": [
+          "Rent"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/rent/{leaseId}/receipts": {
+      "parameters": [
+        {
+          "name": "leaseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Quittances",
+        "operationId": "getReceipts",
+        "tags": [
+          "Receipts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Générer quittance",
+        "operationId": "generateReceipt",
+        "tags": [
+          "Receipts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/rent/{leaseId}/reminders": {
+      "parameters": [
+        {
+          "name": "leaseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Relances",
+        "operationId": "getReminders",
+        "tags": [
+          "Reminders"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Envoyer relance",
+        "operationId": "sendReminder",
+        "tags": [
+          "Reminders"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

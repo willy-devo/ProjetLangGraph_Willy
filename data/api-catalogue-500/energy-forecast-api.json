@@ -1,0 +1,119 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Energy Forecast API",
+    "version": "1.0.0",
+    "x-api-id": "energy-forecast-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe IoT",
+    "x-domain": "IoT",
+    "description": "Prévisions consommation énergétique. Modèles ML et courbes de charge. DIFFERENCE vs energy-consumption-api : Forecast = prévisions futures, Consumption = données historiques.",
+    "x-false-positive-warning": "Données historiques -> energy-consumption-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/forecast/{siteId}": {
+      "parameters": [
+        {
+          "name": "siteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Prévisions 24h/7j",
+        "operationId": "getEnergyForecast",
+        "tags": [
+          "Forecast"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Calculer prévision",
+        "operationId": "requestForecast",
+        "tags": [
+          "Forecast"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/forecast/{siteId}/accuracy": {
+      "parameters": [
+        {
+          "name": "siteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Précision modèle",
+        "operationId": "getForecastAccuracy",
+        "tags": [
+          "Accuracy"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

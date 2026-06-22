@@ -1,0 +1,265 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SMS API",
+    "version": "1.0.0",
+    "x-api-id": "sms-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Communication",
+    "description": "Envoi de SMS transactionnels et OTP. Canal SMS seul. DIFFÉRENCE vs notification-api : SMS API = canal SMS avec numéros courts dédiés, Notification API = façade multi-canal. DIFFÉRENCE vs messaging-api : SMS = externe vers mobile, Messaging = chat in-app bidirectionnel.",
+    "x-false-positive-warning": "Multicanal → notification-api. Chat in-app → messaging-api. Email → email-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/sms/send": {
+      "post": {
+        "summary": "Envoyer un SMS transactionnel",
+        "operationId": "sendSMS",
+        "tags": [
+          "SMS"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SMSSend"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Envoyé"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/sms/otp/send": {
+      "post": {
+        "summary": "Envoyer un code OTP par SMS",
+        "operationId": "sendOTP",
+        "tags": [
+          "OTP"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone",
+                  "purpose"
+                ],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "example": "+33612345678"
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "login",
+                      "payment",
+                      "account_change"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OTP envoyé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/sms/otp/verify": {
+      "post": {
+        "summary": "Vérifier un code OTP",
+        "operationId": "verifyOTP",
+        "tags": [
+          "OTP"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone",
+                  "code"
+                ],
+                "properties": {
+                  "phone": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 6
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP valide"
+          },
+          "400": {
+            "description": "OTP invalide ou expiré"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/sms/{id}/status": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut de livraison d'un SMS",
+        "operationId": "getSMSStatus",
+        "tags": [
+          "SMS"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statut"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SMSSend": {
+        "type": "object",
+        "required": [
+          "to",
+          "message"
+        ],
+        "properties": {
+          "to": {
+            "type": "string",
+            "example": "+33612345678"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "sender_id": {
+            "type": "string",
+            "example": "DEVOTEAM"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

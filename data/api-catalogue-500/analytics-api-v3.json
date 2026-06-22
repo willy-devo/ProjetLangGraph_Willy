@@ -1,0 +1,376 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Analytics API",
+    "version": "3.0.0",
+    "x-api-id": "analytics-api-v3",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Data",
+    "x-domain": "Analytics & BI",
+    "description": "Version actuelle. Ajout de l'analytique prédictive ML, des alertes sur seuils de métriques, du partage de dashboards avec permissions granulaires et de l'intégration Looker/Tableau. DIFFÉRENCE vs reporting-api : Analytics = exploration temps réel et prédictions, Reporting = documents planifiés pour distribution.",
+    "x-breaking-changes-from-previous": [
+      "predictive_insights: nouveau endpoint ML",
+      "metric_alerts: alertes automatiques sur seuils",
+      "dashboard.permissions: ACL par utilisateur ou groupe",
+      "export_to: Looker | Tableau | PowerBI natifs",
+      "sampling_rate: contrôle du taux d'échantillonnage pour gros volumes",
+      "anomaly_detection: détection automatique des anomalies"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/analytics/sales": {
+      "get": {
+        "summary": "Métriques ventes avec détection d'anomalies",
+        "operationId": "getSalesV3",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "anomaly_detection",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métriques + anomalies détectées"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/analytics/predict": {
+      "post": {
+        "summary": "Prédictions ML sur les métriques (nouveau en v3)",
+        "operationId": "predictMetrics",
+        "tags": [
+          "Predictive"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "metric",
+                  "horizon_days"
+                ],
+                "properties": {
+                  "metric": {
+                    "type": "string",
+                    "example": "revenue"
+                  },
+                  "horizon_days": {
+                    "type": "integer",
+                    "example": 30
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": [
+                      "linear",
+                      "prophet",
+                      "lstm"
+                    ],
+                    "default": "prophet"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prédictions avec intervalles de confiance"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/analytics/alerts": {
+      "post": {
+        "summary": "Créer alerte sur seuil de métrique (nouveau en v3)",
+        "operationId": "createMetricAlert",
+        "tags": [
+          "Alerts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "metric",
+                  "condition",
+                  "threshold"
+                ],
+                "properties": {
+                  "metric": {
+                    "type": "string"
+                  },
+                  "condition": {
+                    "type": "string",
+                    "enum": [
+                      "above",
+                      "below",
+                      "anomaly"
+                    ]
+                  },
+                  "threshold": {
+                    "type": "number"
+                  },
+                  "notify": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "email"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alerte créée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les alertes actives",
+        "operationId": "listMetricAlerts",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Alertes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/analytics/export": {
+      "post": {
+        "summary": "Exporter vers Looker, Tableau ou PowerBI (nouveau en v3)",
+        "operationId": "exportAnalytics",
+        "tags": [
+          "Export"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "destination"
+                ],
+                "properties": {
+                  "destination": {
+                    "type": "string",
+                    "enum": [
+                      "looker",
+                      "tableau",
+                      "powerbi",
+                      "csv"
+                    ]
+                  },
+                  "dashboard_id": {
+                    "type": "string"
+                  },
+                  "date_range": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Export lancé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/analytics/dashboards": {
+      "post": {
+        "summary": "Créer dashboard avec permissions ACL",
+        "operationId": "createDashboardV3",
+        "tags": [
+          "Dashboards"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "widgets": {
+                    "type": "array"
+                  },
+                  "permissions": {
+                    "type": "object",
+                    "description": "ACL par user/groupe — nouveau en v3",
+                    "properties": {
+                      "public": {
+                        "type": "boolean"
+                      },
+                      "allowed_users": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "allowed_groups": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dashboard créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Actuary API",
+    "version": "1.0.0",
+    "x-api-id": "actuary-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Assurance",
+    "x-domain": "Insurance",
+    "description": "Calculs actuariels. Provisions, réserves et solvabilité."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/actuary/provisions": {
+      "get": {
+        "summary": "Provisions techniques",
+        "operationId": "getProvisions",
+        "tags": [
+          "Provisions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Calculer provisions",
+        "operationId": "calculateProvisions",
+        "tags": [
+          "Provisions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/actuary/solvency": {
+      "get": {
+        "summary": "Ratio solvabilite",
+        "operationId": "getSolvencyRatio",
+        "tags": [
+          "Solvency"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Tester solvabilite",
+        "operationId": "runSolvencyTest",
+        "tags": [
+          "Solvency"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/actuary/mortality": {
+      "get": {
+        "summary": "Tables mortalité",
+        "operationId": "getMortalityTables",
+        "tags": [
+          "Mortality"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

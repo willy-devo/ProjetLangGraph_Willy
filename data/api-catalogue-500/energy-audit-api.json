@@ -1,0 +1,155 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Energy Audit API",
+    "version": "1.0.0",
+    "x-api-id": "energy-audit-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Immobilier",
+    "x-domain": "RealEstate",
+    "description": "Audits énergétiques bâtiments. DPE, recommandations et suivi travaux. DIFFERENCE vs carbon-footprint-api : Energy Audit = diagnostic bâtiment DPE, Carbon Footprint = bilan carbone activités.",
+    "x-false-positive-warning": "Bilan carbone activites -> carbon-footprint-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/audits": {
+      "get": {
+        "summary": "Audits réalisés",
+        "operationId": "listAudits",
+        "tags": [
+          "Audits"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Commander audit",
+        "operationId": "createAudit",
+        "tags": [
+          "Audits"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/audits/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Rapport DPE",
+        "operationId": "getAudit",
+        "tags": [
+          "Audits"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier",
+        "operationId": "updateAudit",
+        "tags": [
+          "Audits"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/audits/{id}/recommendations": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Recommandations travaux",
+        "operationId": "getRecommendations",
+        "tags": [
+          "Recs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

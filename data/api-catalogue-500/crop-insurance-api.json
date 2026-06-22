@@ -1,0 +1,116 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Crop Insurance API",
+    "version": "1.0.0",
+    "x-api-id": "crop-insurance-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Agriculture",
+    "x-domain": "Agriculture",
+    "description": "Assurance récoltes. Grêle, sécheresse et sinistres. DIFFERENCE vs insurance-claim-api : Crop Insurance = assurance récolte agricole, Claim = sinistre assurance générique.",
+    "x-false-positive-warning": "Sinistre assurance generique -> insurance-claim-api-v3."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/crop-insurance/contracts": {
+      "get": {
+        "summary": "Contrats récolte",
+        "operationId": "listCropContracts",
+        "tags": [
+          "Contracts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Souscrire",
+        "operationId": "subscribeCropInsurance",
+        "tags": [
+          "Contracts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/crop-insurance/claims": {
+      "get": {
+        "summary": "Sinistres récolte",
+        "operationId": "listCropClaims",
+        "tags": [
+          "Claims"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Déclarer perte",
+        "operationId": "declareCropLoss",
+        "tags": [
+          "Claims"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

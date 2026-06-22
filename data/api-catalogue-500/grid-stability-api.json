@@ -1,0 +1,101 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Grid Stability API",
+    "version": "1.0.0",
+    "x-api-id": "grid-stability-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe IoT",
+    "x-domain": "IoT",
+    "description": "Stabilité et équilibrage du réseau électrique. Fréquence, tension et prédictions. DIFFERENCE vs grid-api : Grid Stability = analyse stabilité et prédictions, Grid = gestion noeuds et incidents.",
+    "x-false-positive-warning": "Gestion noeuds et incidents -> grid-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/stability/status": {
+      "get": {
+        "summary": "Statut stabilité réseau",
+        "operationId": "getStabilityStatus",
+        "tags": [
+          "Status"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/stability/frequency": {
+      "get": {
+        "summary": "Historique fréquence",
+        "operationId": "getFrequencyHistory",
+        "tags": [
+          "Frequency"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/stability/forecast": {
+      "get": {
+        "summary": "Prévisions stabilité",
+        "operationId": "getStabilityForecast",
+        "tags": [
+          "Forecast"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

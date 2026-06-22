@@ -1,0 +1,99 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Property Management API",
+    "version": "1.0.0",
+    "x-api-id": "property-management-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Immobilier",
+    "x-domain": "RealEstate",
+    "description": "Gestion portefeuille immobilier. Vue consolidee, reporting et KPIs. DIFFERENCE vs property-api : Property Management = vue portefeuille multi-biens, Property = fiche d'un seul bien.",
+    "x-false-positive-warning": "Fiche d'un bien -> property-api-v3."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/portfolio": {
+      "get": {
+        "summary": "Vue portefeuille",
+        "operationId": "getPortfolioOverview",
+        "tags": [
+          "Portfolio"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter bien",
+        "operationId": "addPropertyToPortfolio",
+        "tags": [
+          "Portfolio"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/portfolio/kpis": {
+      "get": {
+        "summary": "KPIs portefeuille",
+        "operationId": "getPortfolioKPIs",
+        "tags": [
+          "KPIs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

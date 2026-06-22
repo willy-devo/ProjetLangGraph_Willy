@@ -1,0 +1,216 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Demand Forecast API",
+    "version": "1.0.0",
+    "x-api-id": "demand-forecast-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Supply",
+    "x-domain": "Supply Chain",
+    "description": "Prévision de la demande. Modèles ML pour anticiper les besoins de stock et optimiser les achats."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/forecast/demand": {
+      "post": {
+        "summary": "Générer une prévision de demande",
+        "operationId": "forecastDemand",
+        "tags": [
+          "Forecast"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "product_ids",
+                  "horizon_days"
+                ],
+                "properties": {
+                  "product_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "horizon_days": {
+                    "type": "integer",
+                    "example": 30,
+                    "description": "Nombre de jours à prévoir"
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": [
+                      "arima",
+                      "prophet",
+                      "ml_ensemble"
+                    ],
+                    "default": "ml_ensemble"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prévisions par produit et par jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/forecast/stockouts": {
+      "get": {
+        "summary": "Produits à risque de rupture dans les 30 jours",
+        "operationId": "getForecastStockouts",
+        "tags": [
+          "Forecast"
+        ],
+        "parameters": [
+          {
+            "name": "horizon_days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            }
+          },
+          {
+            "name": "confidence",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "default": 0.85
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produits à risque avec probabilité"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/forecast/replenishment": {
+      "post": {
+        "summary": "Plan de réapprovisionnement recommandé",
+        "operationId": "getReplenishmentPlan",
+        "tags": [
+          "Forecast"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "warehouse_id": {
+                    "type": "string"
+                  },
+                  "budget_limit": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plan avec quantités recommandées par produit"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Non autorisé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Non trouvé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

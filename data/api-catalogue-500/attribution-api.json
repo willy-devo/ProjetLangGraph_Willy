@@ -1,0 +1,201 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Attribution API",
+    "version": "1.0.0",
+    "x-api-id": "attribution-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Data",
+    "x-domain": "Analytics & BI",
+    "description": "Attribution marketing. Modèles first-touch, last-touch et multi-touch pour attribuer les conversions aux canaux."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/attribution/models": {
+      "get": {
+        "summary": "Modèles d'attribution disponibles",
+        "operationId": "getAttributionModels",
+        "tags": [
+          "Attribution"
+        ],
+        "responses": {
+          "200": {
+            "description": "Modèles"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/attribution/analyze": {
+      "post": {
+        "summary": "Analyser l'attribution d'une conversion",
+        "operationId": "analyzeAttribution",
+        "tags": [
+          "Attribution"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "conversion_id",
+                  "model"
+                ],
+                "properties": {
+                  "conversion_id": {
+                    "type": "string"
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": [
+                      "first_touch",
+                      "last_touch",
+                      "linear",
+                      "time_decay",
+                      "data_driven"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attribution calculée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/attribution/channels": {
+      "get": {
+        "summary": "Performance par canal sur une période",
+        "operationId": "getChannelAttribution",
+        "tags": [
+          "Attribution"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "last_touch"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Canaux"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

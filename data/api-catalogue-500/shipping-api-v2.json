@@ -1,0 +1,388 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Shipping API",
+    "version": "2.0.0",
+    "x-api-id": "shipping-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Logistique",
+    "x-domain": "Supply Chain",
+    "description": "Version 2 de l'API d'expédition — version actuelle recommandée. Ajout du tracking temps réel GPS, des expéditions multi-colis, de la gestion des douanes pour l'export international et du calcul CO2. DIFFÉRENCE vs delivery-api : Shipping gère les colis et transporteurs, Delivery gère les créneaux et plannings de livraison.",
+    "x-false-positive-warning": "Créneaux de livraison planifiés → delivery-api. Suivi multi-transporteurs agrégé → logistics-tracking-api.",
+    "x-breaking-changes-from-previous": [
+      "multi_parcels: tableau de colis (remplace l'expédition mono-colis)",
+      "tracking en temps réel via WebSocket endpoint /v2/shipping/{id}/live-track",
+      "customs_declaration: obligatoire pour destinations hors-UE",
+      "co2_kg: empreinte carbone calculée et retournée",
+      "label_format: ZPL | PDF (nouveau choix)",
+      "carrier_account_id: support multi-compte transporteur"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/shipping/create": {
+      "post": {
+        "summary": "Créer expédition multi-colis avec calcul CO2 et douanes",
+        "operationId": "createShipmentV2",
+        "tags": [
+          "Shipping"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShipmentV2Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Expédition créée — étiquettes générées"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/shipping/estimate": {
+      "post": {
+        "summary": "Estimer frais et CO2 par transporteur",
+        "operationId": "estimateShipmentV2",
+        "tags": [
+          "Shipping"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "parcels",
+                  "destination"
+                ],
+                "properties": {
+                  "parcels": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "destination": {
+                    "type": "object"
+                  },
+                  "carriers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "include_co2": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estimations avec CO2 par transporteur"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/shipping/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut complet de l'expédition",
+        "operationId": "getShipmentV2",
+        "tags": [
+          "Shipping"
+        ],
+        "responses": {
+          "200": {
+            "description": "Expédition"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/shipping/{id}/live-track": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Tracking GPS temps réel (WebSocket SSE — nouveau en v2)",
+        "operationId": "liveTrackShipment",
+        "tags": [
+          "Shipping"
+        ],
+        "responses": {
+          "200": {
+            "description": "Stream SSE avec position GPS"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/shipping/{id}/labels": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Étiquettes en PDF ou ZPL (nouveau format en v2)",
+        "operationId": "getShipmentLabels",
+        "tags": [
+          "Shipping"
+        ],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PDF",
+                "ZPL"
+              ],
+              "default": "PDF"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Étiquettes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/shipping/{id}/cancel": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Annuler une expédition",
+        "operationId": "cancelShipmentV2",
+        "tags": [
+          "Shipping"
+        ],
+        "responses": {
+          "200": {
+            "description": "Annulée"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ShipmentV2Create": {
+        "type": "object",
+        "required": [
+          "parcels",
+          "carrier",
+          "destination",
+          "origin"
+        ],
+        "properties": {
+          "parcels": {
+            "type": "array",
+            "minItems": 1,
+            "description": "BREAKING v2: multi-colis au lieu de mono",
+            "items": {
+              "type": "object",
+              "properties": {
+                "weight_kg": {
+                  "type": "number"
+                },
+                "dimensions": {
+                  "type": "object"
+                },
+                "contents": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "carrier": {
+            "type": "string",
+            "enum": [
+              "chronopost",
+              "colissimo",
+              "ups",
+              "fedex",
+              "dhl"
+            ]
+          },
+          "carrier_account_id": {
+            "type": "string",
+            "description": "Nouveau en v2 — multi-compte transporteur"
+          },
+          "origin": {
+            "type": "object"
+          },
+          "destination": {
+            "type": "object"
+          },
+          "customs_declaration": {
+            "type": "object",
+            "description": "Obligatoire hors-UE en v2",
+            "properties": {
+              "hs_code": {
+                "type": "string"
+              },
+              "declared_value": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              }
+            }
+          },
+          "label_format": {
+            "type": "string",
+            "enum": [
+              "PDF",
+              "ZPL"
+            ],
+            "default": "PDF"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

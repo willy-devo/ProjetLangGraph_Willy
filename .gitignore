@@ -1,0 +1,43 @@
+# ── Secrets (JAMAIS commités) ──
+.env
+.env.*
+!.env.example
+service_account.json
+*-service-account.json
+credentials.json
+token.json
+*.json.key
+*.pem
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+.eggs/
+.venv/
+venv/
+env/
+
+# ── Tests / cache ──
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ── Chainlit ──
+.chainlit/
+.files/
+chainlit.md
+
+# ── Sorties d'éval locales (le Sheet est la vraie sortie) ──
+data/results/
+
+# ── IDE / OS ──
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

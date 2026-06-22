@@ -1,0 +1,82 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Loyalty Points Hotel Bridge API",
+    "version": "1.0.0",
+    "x-api-id": "loyalty-points-hotel-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Tourisme",
+    "x-domain": "Tourism",
+    "description": "Passerelle points fidelite hotel/retail. Transfert et conversion points. DIFFERENCE vs loyalty-hotel-api : Ce bridge = conversion entre programmes, Loyalty Hotel = programme hotelier direct.",
+    "x-false-positive-warning": "Programme hotelier direct -> loyalty-hotel-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/loyalty-bridge/convert": {
+      "post": {
+        "summary": "Convertir retail en hotel",
+        "operationId": "convertRetailToHotelPoints",
+        "tags": [
+          "Convert"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/loyalty-bridge/rates": {
+      "get": {
+        "summary": "Taux de conversion",
+        "operationId": "getConversionRates",
+        "tags": [
+          "Rates"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Payment API",
+    "version": "1.0.0",
+    "x-api-id": "payment-api-v1",
+    "x-api-version": "v1",
+    "x-status": "deprecated",
+    "x-team": "Equipe Finance",
+    "x-domain": "Finance",
+    "description": "Version 1 de l'API paiement. DEPRECATED 2022. Supporte uniquement les paiements carte, pas de PayPal ni SEPA. Remboursements manuels uniquement. Migrer vers v2.",
+    "x-breaking-changes-in-next": [
+      "Ajout méthodes PayPal et SEPA",
+      "capture_mode (immediate/manual) introduit",
+      "Refund devient endpoint dédié /refund",
+      "amount_refunded ajouté à la réponse"
+    ],
+    "x-successor": "payment-api"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/payments": {
+      "post": {
+        "summary": "Créer un paiement carte (seul canal supporté)",
+        "operationId": "createPaymentV1",
+        "tags": [
+          "Payments"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentV1Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Paiement initié"
+          },
+          "402": {
+            "description": "Refusé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/payments/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          },
+          "description": "ID entier — BREAKING v2: string PAY-XXXX"
+        }
+      ],
+      "get": {
+        "summary": "Statut du paiement",
+        "operationId": "getPaymentV1",
+        "tags": [
+          "Payments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Annuler (BREAKING v2: remplacé par /refund)",
+        "operationId": "cancelPaymentV1",
+        "tags": [
+          "Payments"
+        ],
+        "responses": {
+          "200": {
+            "description": "Annulé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PaymentV1Create": {
+        "type": "object",
+        "required": [
+          "amount",
+          "card_token",
+          "order_id"
+        ],
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "card_token": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "default": "EUR"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

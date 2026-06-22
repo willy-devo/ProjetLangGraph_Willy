@@ -1,0 +1,329 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Shipping API",
+    "version": "1.0.0",
+    "x-api-id": "shipping-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Logistique",
+    "x-domain": "Supply Chain",
+    "description": "Expéditions et livraisons. Calcul des frais de port, tracking et retours. DIFFÉRENCE vs delivery-api : Shipping gère les colis et transporteurs, Delivery gère les créneaux de livraison planifiés.",
+    "x-false-positive-warning": "Créneaux de livraison → delivery-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/shipping/estimate": {
+      "post": {
+        "summary": "Estimer les frais de livraison",
+        "operationId": "estimateShipping",
+        "tags": [
+          "Shipping"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "weight",
+                  "destination"
+                ],
+                "properties": {
+                  "weight": {
+                    "type": "number",
+                    "description": "Poids en kg"
+                  },
+                  "dimensions": {
+                    "type": "object",
+                    "properties": {
+                      "length": {
+                        "type": "number"
+                      },
+                      "width": {
+                        "type": "number"
+                      },
+                      "height": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "destination": {
+                    "type": "object",
+                    "properties": {
+                      "country": {
+                        "type": "string"
+                      },
+                      "zip": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "carriers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "chronopost",
+                        "colissimo",
+                        "ups",
+                        "fedex",
+                        "dhl"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estimations par transporteur"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/shipping/create": {
+      "post": {
+        "summary": "Créer une expédition",
+        "operationId": "createShipment",
+        "tags": [
+          "Shipping"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "carrier",
+                  "destination"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  },
+                  "carrier": {
+                    "type": "string",
+                    "enum": [
+                      "chronopost",
+                      "colissimo",
+                      "ups",
+                      "fedex",
+                      "dhl"
+                    ]
+                  },
+                  "destination": {
+                    "type": "object"
+                  },
+                  "weight": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Expédition créée — étiquette générée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/shipping/{trackingId}": {
+      "parameters": [
+        {
+          "name": "trackingId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Suivre un colis",
+        "operationId": "trackShipment",
+        "tags": [
+          "Shipping"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statut de suivi"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/shipping/{trackingId}/cancel": {
+      "parameters": [
+        {
+          "name": "trackingId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Annuler une expédition",
+        "operationId": "cancelShipment",
+        "tags": [
+          "Shipping"
+        ],
+        "responses": {
+          "200": {
+            "description": "Annulée"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/shipping/return": {
+      "post": {
+        "summary": "Créer un retour colis",
+        "operationId": "createReturn",
+        "tags": [
+          "Shipping"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "reason"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Retour créé — étiquette retour générée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

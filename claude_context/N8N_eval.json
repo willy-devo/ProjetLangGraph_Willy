@@ -1,0 +1,550 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "Tu es un assistant expert en découverte d'APIs internes chez Devoteam nexDigital.\n\nTON RÔLE :\nTu aides les développeurs à trouver la bonne API interne selon leur besoin.\nTu utilises EXCLUSIVEMENT les résultats retournés par Pinecone.\nTu ne connais PAS les APIs par cœur — toute ta connaissance vient de Pinecone.\n\nIDENTIFIANT D'API (RÈGLE CRITIQUE) :\nChaque résultat Pinecone contient un champ \"name\" (le slug technique, ex: foo-bar-api-v2)\net un champ \"title\" (le libellé humain, ex: Foo Bar API).\nTu dois TOUJOURS désigner une API par son \"name\" exact, JAMAIS par son \"title\".\nCopie le slug tel quel, sans le transformer :\n  - en minuscules, avec des tirets ;\n  - sans espace, sans majuscule, sans astérisques ;\n  - sans dupliquer le suffixe de version.\n\nForme du slug attendue : minuscules uniquement, mots séparés par des tirets,\nsuffixe de version unique (-vN) repris tel quel depuis \"name\".\nÀ proscrire : majuscules, espaces, astérisques, et toute duplication du suffixe\nde version (un -vN qui apparaît deux fois).\nLe slug à utiliser est exactement celui fourni dans le champ \"name\" du résultat Pinecone.\n\nPROCESSUS DE RÉPONSE :\n1. Analyse la question pour comprendre le besoin fonctionnel réel\n2. Identifie parmi les résultats Pinecone l'API la plus pertinente\n3. Si plusieurs APIs semblent correspondre, compare leurs descriptions pour choisir la plus précise\n4. Vérifie toujours le statut (active/deprecated) avant de recommander\n\nRÈGLES STRICTES :\n1. Format obligatoire dans la réponse : **nom-exact-api** — [active|deprecated]\n   (le nom est le \"name\" Pinecone, jamais le title)\n2. Ne recommande jamais une API deprecated si une version active existe\n3. Si une API est deprecated, indique systématiquement son successeur\n4. Si deux APIs semblent similaires, explique la différence fonctionnelle entre elles\n5. Si aucune API ne correspond au besoin : \"Cette fonctionnalité n'existe pas dans le catalogue.\"\n6. Quand plusieurs versions d'une même API existent, recommande la version active la plus\n   récente. Exception : si la question demande explicitement la version active d'une API,\n   renvoie le \"name\" versionné exact (ex: foo-api-v2).\n\nQUALITÉ DE RÉPONSE :\nJustifie ton choix en citant la description retournée par Pinecone\nSois précis sur le cas d'usage couvert par l'API recommandée\nSi le besoin est ambigu, recommande l'API la plus générale et mentionne les alternatives\n\nFORMAT DE SYNTHÈSE FINALE (OBLIGATOIRE) :\nAprès ta réponse complète, termine TOUJOURS par une dernière ligne, seule, exactement au format :\nRECOMMANDED_APIS: [name-1, name-2]\n\nRègles pour cette ligne :\nN'y mets QUE les \"name\" exacts (slugs), copiés depuis le champ \"name\" de Pinecone.\nN'y mets QUE les APIs que tu recommandes activement pour répondre au besoin.\nN'y mets JAMAIS les versions deprecated, ni les APIs citées comme alternatives\n  secondaires, ni les APIs mentionnées comme \"à ne pas confo1Andre\".\nRespecte le nom exact de l'API : slug en minuscules, sans crochets autour du nom,\n  sans **, sans version dupliquée. Les crochets entourent uniquement la liste.\nSépare par des virgules. S'il n'y a aucune API pertinente, écris : RECOMMANDED_APIS: []\n\nAPIS PROCHES :\nQuand plusieurs candidats ont des noms ou des rôles très similaires, lis leurs\nDESCRIPTIONS pour trancher. Si une seule correspond clairement au besoin,\nrecommande-la seule. Si tu ne peux pas départager deux APIs proches avec\ncertitude, recommande-les toutes (3 max) plutôt que de risquer d'écarter la bonne.",
+          "maxIterations": 5,
+          "returnIntermediateSteps": false,
+          "autoSaveHighlightedData": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -624,
+        16
+      ],
+      "id": "4ab78a46-d61b-4e00-a46b-2bc6286d29c9",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -496,
+        224
+      ],
+      "id": "1540c308-e8b4-4565-91d6-fdde58140eb6",
+      "name": "Simple Memory",
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        384
+      ],
+      "id": "fcd87498-1124-45f6-bc88-e3cba4349c19",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "d9wzD2DgFSA7dJ82",
+          "name": "Google Gemini(PaLM) Api for Agentic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d5391b5d-3a7f-4c13-ae7f-5d1e7b25674d",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1504,
+        16
+      ],
+      "id": "ed81d1d0-961e-45f0-88a6-74a5aec6cb53",
+      "name": "Webhook",
+      "webhookId": "d5391b5d-3a7f-4c13-ae7f-5d1e7b25674d"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1024,
+        -64
+      ],
+      "id": "ea412c89-52ed-4bf0-af4f-2040109bba09",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const questions = $input.first().json.body.questions;\nreturn questions.map(q => ({ json: q }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        16
+      ],
+      "id": "85a85009-740c-4b13-a976-e7945e9ad723",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Catalogue de recherche sémantique des APIs internes de Devoteam nexDigital,\ncouvrant les domaines métier de l'entreprise (e-commerce, paiement, logistique,\nRH, analytics, etc.).\n\nÀ utiliser dès qu'un développeur cherche une API, un endpoint ou une capacité\ntechnique existante — qu'il décrive une action métier (\"créer une commande\"),\nune fonctionnalité produit (\"une barre de recherche avec autocomplete\"), un\ndéclencheur (\"quand l'utilisateur ajoute au panier\") ou un simple besoin vague\n(\"gérer les stocks\").\n\nLa recherche se fait par SENS et non par mot-clé : une question formulée de\nfaçon familière, urgente, abrégée ou approximative reste valide. Appelle\nl'outil avec le besoin fonctionnel exprimé.\n\nSi aucun résultat ne correspond réellement au besoin, considère que la\ncapacité n'existe pas au catalogue plutôt que de forcer une correspondance.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "gemb2-apiparsing-raw-v2s",
+          "mode": "list",
+          "cachedResultName": "gemb2-apiparsing-raw-v2s"
+        },
+        "topK": 20,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        224
+      ],
+      "id": "f7481358-528f-4878-a789-411b4681bdd4",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "lkrGprsMBigBf0f0",
+          "name": "Pinecone API (Willy)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12W0eSs7ebydFtv0iwWmHLC8KHaf03WFjEnzKL3RCsp0",
+          "mode": "list",
+          "cachedResultName": "Agentic4API_Results",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12W0eSs7ebydFtv0iwWmHLC8KHaf03WFjEnzKL3RCsp0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 613812715,
+          "mode": "list",
+          "cachedResultName": "Sheet28",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12W0eSs7ebydFtv0iwWmHLC8KHaf03WFjEnzKL3RCsp0/edit#gid=613812715"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "chatInput",
+              "displayName": "chatInput",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        432,
+        48
+      ],
+      "id": "bf410024-97df-4590-bb1e-9d6cd7dde814",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KVG1XnApC0skWTt2",
+          "name": "Google Sheets API (Willy)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        384
+      ],
+      "id": "f43ae849-a0cf-4fb4-a200-3a91b813b21c",
+      "name": "Wait",
+      "webhookId": "81d0697c-1094-4ee8-a19e-9e8d2e9f9585"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        384,
+        -208
+      ],
+      "id": "f3ef8546-d376-4352-8cd2-d27fecf883be",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1312,
+        -160
+      ],
+      "id": "98238ee7-a297-4cbb-9f2c-e13ca212145c",
+      "name": "When chat message received",
+      "webhookId": "72c22c9e-7f5c-4f29-92d6-8b8f2ceadc48"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "21ef3b6d-4777-4613-bbaa-034404ff2c10",
+              "leftValue": "={{ $json.shouldRetry }}",
+              "rightValue": "calling pinecone",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -96,
+        16
+      ],
+      "id": "ee77054c-0e82-4d7d-ab79-c3c19f2c6e47",
+      "name": "If Exec Failed"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6045414a-fb19-44dc-89f1-6d417ad4eb9c",
+              "name": "output",
+              "value": "={{$json.output}}",
+              "type": "string"
+            },
+            {
+              "id": "5930c23b-b68b-409e-8202-394b80ad6483",
+              "name": "retryCount",
+              "value": "={{ $json.retryCount }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -16
+      ],
+      "id": "65a2330d-93a1-4f7f-bc43-e37ff5328c34",
+      "name": "Get Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "const MAX_RETRY = 5;   // nombre max de tentatives avant abandon\n\nconst loopItem = $('Loop Over Items').all()[0].json;\nconst id = loopItem.id || 'Q0001';\n\n// ── retryCount lié à l'ITEM, pas à l'historique global du nœud ──\nlet retryCount = 1;\ntry {\n  const prevRuns = $('Verify Output').all();\n  const prev = prevRuns[prevRuns.length - 1].json;\n  if (prev && prev.id === id) {\n    retryCount = (prev.retryCount || 0) + 1;\n  } else {\n    retryCount = 1;   // nouvel item → reset\n  }\n} catch (e) {\n  retryCount = 1;\n}\n\nlet tokenUsage = null;\ntry {\n  const chatRuns = $('Google Gemini Chat Model').all();\n  const chatOut = chatRuns[chatRuns.length - 1].json;\n  tokenUsage = chatOut.tokenUsage || chatOut.response?.tokenUsage || null;\n} catch (e) {\n  tokenUsage = null;\n}\n\nlet output = $json.output || \"\";\nconst maxRetriesReached = retryCount > MAX_RETRY;\n\nconst isCorrupted =\n  output.toLowerCase().includes(\"calling pinecone\") ||\n  !output.includes(\"RECOMMANDED_APIS:\");\n\n// ── Si on a épuisé les tentatives ET que la sortie est toujours corrompue,\n//    on force une réponse négative propre (exploitable par l'évaluation) ──\nif (maxRetriesReached && isCorrupted) {\n  output = \"Cette fonctionnalité n'existe pas dans le catalogue.\\nRECOMMANDED_APIS: []\";\n}\n\nconst shouldRetry = isCorrupted && !maxRetriesReached;\n\nreturn {\n  json: {\n    id,\n    chatInput: loopItem.chatInput,\n    output,\n    retryCount,\n    maxRetriesReached,\n    shouldRetry,\n    fallbackApplied: maxRetriesReached && isCorrupted,   // trace pour ton éval\n    promptTokens: tokenUsage?.promptTokens ?? null,\n    completionTokens: tokenUsage?.completionTokens ?? null,\n    totalTokens: tokenUsage?.totalTokens ?? null,\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        16
+      ],
+      "id": "909db479-cecb-434f-9746-e9ce4f8ba36c",
+      "name": "Verify Output"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        224
+      ],
+      "id": "e709161c-dbb2-4b99-aa4d-2a80fe69092a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "d9wzD2DgFSA7dJ82",
+          "name": "Google Gemini(PaLM) Api for Agentic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        336
+      ],
+      "id": "9ea147b9-80da-4cd8-b7da-c77ea01f7a3a",
+      "name": "Wait1",
+      "webhookId": "ade3fe8f-e781-4938-82ff-23a26bd987ac"
+    }
+  ],
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Verify Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Exec Failed": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Output": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Verify Output": {
+      "main": [
+        [
+          {
+            "node": "If Exec Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25514d3a738b856a316691b2efb664811ae358b8168daf7a7e5aca32dc6079fe"
+  }
+}

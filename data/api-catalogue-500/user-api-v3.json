@@ -1,0 +1,455 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "User API",
+    "version": "3.0.0",
+    "x-api-id": "user-api-v3",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Identity",
+    "x-domain": "Identity & Access",
+    "description": "Version actuelle recommandée. Ajout de la gestion des identités fédérées (SSO externe), des groupes d'utilisateurs, du provisioning SCIM 2.0 et de l'audit trail complet. DIFFÉRENCE vs user-api-v2 : v3 introduit SCIM, les groupes natifs et la délégation de rôles.",
+    "x-breaking-changes-from-previous": [
+      "SCIM 2.0 endpoint /v3/scim ajouté",
+      "groups: nouveau sous-objet (remplace les rôles imbriqués)",
+      "identity_providers: liste des IdP liés (SSO)",
+      "delegated_admin: un user peut administrer un périmètre",
+      "password_policy: désormais retourné dans le profil",
+      "phone_verified: champ ajouté pour MFA SMS"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/users": {
+      "post": {
+        "summary": "Créer utilisateur avec groupes et IdP liés",
+        "operationId": "createUserV3",
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserV3Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister avec filtres SCIM-compatibles",
+        "operationId": "listUsersV3",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "filter",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filtre SCIM ex: userName eq 'alice'"
+          },
+          {
+            "name": "group_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/users/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^USR-[0-9]{3}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Profil complet avec groupes et IdP",
+        "operationId": "getUserV3",
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour",
+        "operationId": "updateUserV3",
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Désactiver (soft delete avec audit)",
+        "operationId": "deleteUserV3",
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "204": {
+            "description": "Désactivé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/users/{id}/groups": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Groupes d'un utilisateur",
+        "operationId": "getUserGroups",
+        "tags": [
+          "Groups"
+        ],
+        "responses": {
+          "200": {
+            "description": "Groupes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter à un groupe",
+        "operationId": "addUserToGroup",
+        "tags": [
+          "Groups"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "group_id"
+                ],
+                "properties": {
+                  "group_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ajouté"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/groups": {
+      "get": {
+        "summary": "Lister les groupes",
+        "operationId": "listGroups",
+        "tags": [
+          "Groups"
+        ],
+        "responses": {
+          "200": {
+            "description": "Groupes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un groupe",
+        "operationId": "createGroup",
+        "tags": [
+          "Groups"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "permissions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/scim/v2/Users": {
+      "get": {
+        "summary": "Endpoint SCIM 2.0 — liste des utilisateurs (nouveau en v3)",
+        "operationId": "scimListUsers",
+        "tags": [
+          "SCIM"
+        ],
+        "responses": {
+          "200": {
+            "description": "SCIM UserList"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Endpoint SCIM 2.0 — provisionner un utilisateur",
+        "operationId": "scimCreateUser",
+        "tags": [
+          "SCIM"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Provisionné"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserV3Create": {
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "full_name",
+          "user_type"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 10
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "user_type": {
+            "type": "string",
+            "enum": [
+              "customer",
+              "employee",
+              "partner",
+              "admin"
+            ]
+          },
+          "group_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Nouveau en v3"
+          },
+          "identity_provider_id": {
+            "type": "string",
+            "description": "Nouveau en v3 — lié à un IdP SSO"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "preferred_language": {
+            "type": "string",
+            "default": "fr"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

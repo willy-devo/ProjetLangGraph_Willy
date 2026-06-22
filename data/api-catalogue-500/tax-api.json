@@ -1,0 +1,238 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Tax API",
+    "version": "1.0.0",
+    "x-api-id": "tax-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Finance",
+    "x-domain": "Finance",
+    "description": "Calcul des taxes et TVA selon les régions. Conformité fiscale internationale et déclarations."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/tax/calculate": {
+      "post": {
+        "summary": "Calculer les taxes d'une transaction",
+        "operationId": "calculateTax",
+        "tags": [
+          "Tax"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "country"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "number"
+                  },
+                  "country": {
+                    "type": "string",
+                    "example": "FR"
+                  },
+                  "product_type": {
+                    "type": "string",
+                    "enum": [
+                      "physical",
+                      "digital",
+                      "service"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Taxes calculées"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tax/rates": {
+      "get": {
+        "summary": "Taux de TVA par pays",
+        "operationId": "getTaxRates",
+        "tags": [
+          "Tax"
+        ],
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Taux"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tax/validate-vat": {
+      "post": {
+        "summary": "Valider un numéro de TVA intracommunautaire",
+        "operationId": "validateVAT",
+        "tags": [
+          "Tax"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vat_number"
+                ],
+                "properties": {
+                  "vat_number": {
+                    "type": "string",
+                    "example": "FR12345678901"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Valide"
+          },
+          "400": {
+            "description": "Numéro invalide"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tax/reports": {
+      "get": {
+        "summary": "Rapport fiscal par période",
+        "operationId": "getTaxReport",
+        "tags": [
+          "Tax"
+        ],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "2026-Q1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rapport"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

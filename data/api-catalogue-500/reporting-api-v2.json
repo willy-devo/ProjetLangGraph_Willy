@@ -1,0 +1,245 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Reporting API",
+    "version": "2.0.0",
+    "x-api-id": "reporting-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Data",
+    "x-domain": "Analytics & BI",
+    "description": "Version 2 Reporting. Rapports interactifs HTML, white-labeling et collaboration. DIFFÉRENCE vs v1 : ajout format HTML interactif, personnalisation logo/couleurs et commentaires sur rapports.",
+    "x-breaking-changes-from-previous": [
+      "Nouveau format: HTML interactif",
+      "White-labeling (logo, couleurs)",
+      "Commentaires collaboratifs sur rapports",
+      "Rapports récurrents avec diff depuis dernier"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v2/reports/generate": {
+      "post": {
+        "summary": "Générer un rapport avec options white-label",
+        "operationId": "generateReportV2",
+        "tags": [
+          "Reports"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "format"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "pdf",
+                      "excel",
+                      "csv",
+                      "html"
+                    ]
+                  },
+                  "white_label": {
+                    "type": "object",
+                    "properties": {
+                      "logo_url": {
+                        "type": "string"
+                      },
+                      "primary_color": {
+                        "type": "string"
+                      },
+                      "company_name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "schedule": {
+                    "type": "object",
+                    "properties": {
+                      "cron": {
+                        "type": "string"
+                      },
+                      "recipients": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "email"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Génération lancée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/reports/{id}/comments": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Ajouter un commentaire collaboratif",
+        "operationId": "addReportComment",
+        "tags": [
+          "Reports"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Commentaire ajouté"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/reports/{id}/share": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Partager un rapport avec un lien externe",
+        "operationId": "shareReport",
+        "tags": [
+          "Reports"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lien de partage"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Non autorisé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Non trouvé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

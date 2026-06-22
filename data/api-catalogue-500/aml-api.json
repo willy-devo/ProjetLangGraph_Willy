@@ -1,0 +1,135 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AML API",
+    "version": "1.0.0",
+    "x-api-id": "aml-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Banque",
+    "x-domain": "Banking",
+    "description": "Anti-Money Laundering. Surveillance transactions blanchiment et financement terrorisme. DIFFERENCE vs kyc-api : AML = monitoring continu, KYC = verification identite initiale.",
+    "x-false-positive-warning": "KYC onboarding -> kyc-api-v2."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/aml/monitor": {
+      "post": {
+        "summary": "Analyser transaction",
+        "operationId": "monitorTransaction",
+        "tags": [
+          "Monitor"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/aml/alerts": {
+      "get": {
+        "summary": "Alertes AML",
+        "operationId": "getAMLAlerts",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Ouvrir investigation",
+        "operationId": "investigateAlert",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/aml/reports": {
+      "post": {
+        "summary": "Declaration TRACFIN",
+        "operationId": "declareTRACFIN",
+        "tags": [
+          "Reports"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Historique",
+        "operationId": "getDeclarations",
+        "tags": [
+          "Reports"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "IBAN Validation API",
+    "version": "1.0.0",
+    "x-api-id": "iban-validation-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Banque",
+    "x-domain": "Banking",
+    "description": "Validation IBAN/BIC. DIFFERENCE vs transfer-api : IBAN Validation = verification avant operation, Transfer = execution virement.",
+    "x-false-positive-warning": "Executer virement -> transfer-api-v2."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/iban/validate": {
+      "post": {
+        "summary": "Valider IBAN",
+        "operationId": "validateIBAN",
+        "tags": [
+          "Validation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/iban/decode/{iban}": {
+      "parameters": [
+        {
+          "name": "iban",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Decoder IBAN",
+        "operationId": "decodeIBAN",
+        "tags": [
+          "Decode"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

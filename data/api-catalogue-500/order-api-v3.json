@@ -1,0 +1,543 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Order API",
+    "version": "3.0.0",
+    "x-api-id": "order-api",
+    "x-api-version": "v3",
+    "x-status": "deprecated",
+    "x-team": "Equipe Commerce",
+    "x-domain": "E-Commerce",
+    "description": "Version 3 — DEPRECATED sept. 2023. Adresse structurée, statut partially_shipped, objet discount enrichi.",
+    "x-breaking-changes-from-previous": [
+      "shipping_address string→objet {street,city,zip,country}",
+      "discount_code string→objet {code,type,value}",
+      "Nouveau statut: partially_shipped",
+      "updated_at→last_modified_at"
+    ],
+    "x-breaking-changes-in-next": [
+      "items→order_lines",
+      "total_price→amount_due",
+      "currency obligatoire (nouveau)",
+      "Webhooks automatiques sur changement de statut",
+      "Endpoint /ship supprimé→PATCH /status"
+    ],
+    "x-successor": "order-api-v4"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/orders": {
+      "post": {
+        "summary": "Créer une commande avec adresse structurée",
+        "operationId": "createOrderV3",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderV3Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderV3"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister avec filtres avancés",
+        "operationId": "listOrdersV3",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed",
+                "partially_shipped",
+                "shipped",
+                "delivered",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste paginée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/orders/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^ORD-[0-9]{4}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Récupérer une commande",
+        "operationId": "getOrderV3",
+        "tags": [
+          "Orders"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderV3"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier (avant expédition)",
+        "operationId": "updateOrderV3",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "shipping": {
+                    "$ref": "#/components/schemas/ShippingAddress"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Modifiée"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/orders/{id}/cancel": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Annuler avec option remboursement",
+        "operationId": "cancelOrderV3",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  },
+                  "refund": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Annulée"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/orders/{id}/ship": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Expédier tout ou partie — BREAKING v4: supprimé, utiliser PATCH /status",
+        "operationId": "shipOrderV3",
+        "tags": [
+          "Orders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "item_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "tracking_number": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Expédiée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ShippingAddress": {
+        "type": "object",
+        "required": [
+          "street",
+          "city",
+          "zip",
+          "country"
+        ],
+        "properties": {
+          "street": {
+            "type": "string",
+            "example": "12 rue de la Paix"
+          },
+          "city": {
+            "type": "string",
+            "example": "Paris"
+          },
+          "zip": {
+            "type": "string",
+            "example": "75001"
+          },
+          "country": {
+            "type": "string",
+            "example": "FR"
+          },
+          "additional": {
+            "type": "string"
+          }
+        }
+      },
+      "Discount": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ]
+          },
+          "value": {
+            "type": "number"
+          },
+          "applied_amount": {
+            "type": "number"
+          }
+        }
+      },
+      "OrderItem": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "quantity",
+          "unit_price"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "shipped",
+              "delivered"
+            ]
+          }
+        }
+      },
+      "OrderV3Create": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "items",
+          "shipping"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "pattern": "^CUST-[0-9]{3}$"
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            }
+          },
+          "shipping": {
+            "$ref": "#/components/schemas/ShippingAddress"
+          },
+          "discount": {
+            "$ref": "#/components/schemas/Discount"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderV3": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ORD-0042"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            }
+          },
+          "shipping": {
+            "$ref": "#/components/schemas/ShippingAddress"
+          },
+          "discount": {
+            "$ref": "#/components/schemas/Discount"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "total_price": {
+            "type": "number",
+            "description": "BREAKING v4: renommé amount_due"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "partially_shipped",
+              "shipped",
+              "delivered",
+              "cancelled"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_modified_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

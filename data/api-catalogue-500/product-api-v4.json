@@ -1,0 +1,485 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Product API",
+    "version": "4.0.0",
+    "x-api-id": "product-api-v4",
+    "x-api-version": "v4",
+    "x-status": "active",
+    "x-team": "Equipe Catalog",
+    "x-domain": "E-Commerce",
+    "description": "Version actuelle et recommandée de l'API Produit. Introduit la gestion multi-catalogue (B2B/B2C), les bundles natifs, l'IA de description automatique et la conformité PIM complète. DIFFÉRENCE vs product-catalog-api : Product API gère le cycle de vie complet (création, variantes, SEO, publication), Product Catalog API gère la taxonomie et les catégories.",
+    "x-breaking-changes-from-previous": [
+      "multi_catalog_id obligatoire (remplace category_id seul)",
+      "description_auto: champ IA généré (optionnel mais présent)",
+      "variants désormais paginés via /v4/products/{id}/variants?page=N",
+      "seo.structured_data ajouté (JSON-LD Schema.org)",
+      "status 'archived' remplacé par lifecycle.stage enum",
+      "pricing.tax_inclusive obligatoire (Boolean)"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v4/products": {
+      "get": {
+        "summary": "Lister produits multi-catalogue avec filtres IA",
+        "operationId": "listProductsV4",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "catalog_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Nouveau en v4 — filtre par catalogue B2B ou B2C"
+          },
+          {
+            "name": "lifecycle_stage",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "review",
+                "active",
+                "end_of_life"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Recherche sémantique IA"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste paginée enrichie"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un produit avec description IA optionnelle",
+        "operationId": "createProductV4",
+        "tags": [
+          "Products"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductV4Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Produit créé"
+          },
+          "422": {
+            "description": "SEO manquant pour lifecycle_stage=active"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v4/products/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^PROD-[0-9]{3}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Produit complet avec structured data JSON-LD",
+        "operationId": "getProductV4",
+        "tags": [
+          "Products"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour",
+        "operationId": "updateProductV4",
+        "tags": [
+          "Products"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Passer en end_of_life (jamais supprimé)",
+        "operationId": "eolProductV4",
+        "tags": [
+          "Products"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lifecycle → end_of_life"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v4/products/{id}/variants": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Variantes paginées (BREAKING: plus dans la réponse racine)",
+        "operationId": "getVariantsV4",
+        "tags": [
+          "Variants"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Variantes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter une variante",
+        "operationId": "addVariantV4",
+        "tags": [
+          "Variants"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sku",
+                  "attributes"
+                ],
+                "properties": {
+                  "sku": {
+                    "type": "string"
+                  },
+                  "attributes": {
+                    "type": "object"
+                  },
+                  "stock": {
+                    "type": "integer"
+                  },
+                  "price_override": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ajoutée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v4/products/{id}/ai-description": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Générer une description produit par IA (nouveau en v4)",
+        "operationId": "generateDescriptionV4",
+        "tags": [
+          "Products"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tone": {
+                    "type": "string",
+                    "enum": [
+                      "professional",
+                      "casual",
+                      "luxury"
+                    ]
+                  },
+                  "language": {
+                    "type": "string",
+                    "default": "fr"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Description générée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProductV4Create": {
+        "type": "object",
+        "required": [
+          "name",
+          "sku",
+          "catalog_id",
+          "pricing"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "catalog_id": {
+            "type": "string",
+            "description": "Nouveau champ obligatoire en v4 — identifie le catalogue B2B ou B2C"
+          },
+          "description": {
+            "type": "string"
+          },
+          "pricing": {
+            "type": "object",
+            "required": [
+              "base_price",
+              "currency",
+              "tax_inclusive"
+            ],
+            "properties": {
+              "base_price": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string",
+                "example": "EUR"
+              },
+              "tax_inclusive": {
+                "type": "boolean",
+                "description": "BREAKING v4 : champ obligatoire"
+              }
+            }
+          },
+          "lifecycle": {
+            "type": "object",
+            "properties": {
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "review",
+                  "active",
+                  "end_of_life"
+                ],
+                "description": "Remplace 'status' de v3"
+              }
+            }
+          },
+          "seo": {
+            "type": "object",
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "meta_title": {
+                "type": "string"
+              },
+              "meta_description": {
+                "type": "string"
+              },
+              "structured_data": {
+                "type": "object",
+                "description": "JSON-LD Schema.org — nouveau en v4"
+              }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

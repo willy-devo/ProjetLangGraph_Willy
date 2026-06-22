@@ -1,0 +1,335 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Appointment API",
+    "version": "1.0.0",
+    "x-api-id": "appointment-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Support",
+    "x-domain": "Customer Support",
+    "description": "Prise de rendez-vous clients. Réservation de créneaux avec des conseillers ou techniciens. DIFFÉRENCE vs delivery-api : Appointment = RDV avec une personne (conseiller, technicien), Delivery = créneau de livraison de colis. DIFFÉRENCE vs calendar-api : Appointment gère les réservations côté client, Calendar gère les disponibilités internes.",
+    "x-false-positive-warning": "Livraison de colis → delivery-api. Agenda interne → calendar-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/appointments": {
+      "post": {
+        "summary": "Prendre un rendez-vous",
+        "operationId": "bookAppointment",
+        "tags": [
+          "Appointments"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "RDV pris"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les rendez-vous",
+        "operationId": "listAppointments",
+        "tags": [
+          "Appointments"
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "confirmed",
+                "completed",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rendez-vous"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/appointments/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Détails d'un rendez-vous",
+        "operationId": "getAppointment",
+        "tags": [
+          "Appointments"
+        ],
+        "responses": {
+          "200": {
+            "description": "RDV"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Reporter un rendez-vous",
+        "operationId": "rescheduleAppointment",
+        "tags": [
+          "Appointments"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "new_slot_id"
+                ],
+                "properties": {
+                  "new_slot_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reporté"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Annuler un rendez-vous",
+        "operationId": "cancelAppointment",
+        "tags": [
+          "Appointments"
+        ],
+        "responses": {
+          "200": {
+            "description": "Annulé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/appointments/slots": {
+      "get": {
+        "summary": "Créneaux disponibles",
+        "operationId": "getAvailableSlots",
+        "tags": [
+          "Appointments"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "service_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "technical_support",
+                "sales",
+                "after_sales"
+              ]
+            }
+          },
+          {
+            "name": "advisor_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Créneaux disponibles"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppointmentCreate": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "slot_id",
+          "service_type"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "slot_id": {
+            "type": "string"
+          },
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "technical_support",
+              "sales",
+              "after_sales"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "in_person",
+              "phone",
+              "video"
+            ],
+            "default": "in_person"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

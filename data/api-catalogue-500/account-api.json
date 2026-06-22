@@ -1,0 +1,468 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Account API",
+    "version": "1.0.0",
+    "x-api-id": "account-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Identity",
+    "x-domain": "Identity & Access",
+    "description": "Comptes organisations B2B. Gestion multi-utilisateurs sous une entité juridique (entreprise, association). Facturation, membres et rôles. DIFFÉRENCE vs user-api : Account = organisation (personne morale), User = personne physique. DIFFÉRENCE vs customer-profile-api : Account = entreprise cliente B2B, Customer = particulier B2C. DIFFÉRENCE vs employee-api : Account gère les clients entreprises, Employee les collaborateurs internes.",
+    "x-false-positive-warning": "Personne physique → user-api ou customer-profile-api. Collaborateur interne → employee-api. Compte B2B uniquement."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/accounts": {
+      "post": {
+        "summary": "Créer un compte organisation",
+        "operationId": "createAccount",
+        "tags": [
+          "Accounts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les comptes organisations",
+        "operationId": "listAccounts",
+        "tags": [
+          "Accounts"
+        ],
+        "parameters": [
+          {
+            "name": "plan",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "free",
+                "starter",
+                "business",
+                "enterprise"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "suspended",
+                "trial"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/accounts/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^ACC-[0-9]{3}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Détails d'un compte",
+        "operationId": "getAccount",
+        "tags": [
+          "Accounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour un compte",
+        "operationId": "updateAccount",
+        "tags": [
+          "Accounts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/accounts/{id}/members": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Lister les membres",
+        "operationId": "getMembers",
+        "tags": [
+          "Members"
+        ],
+        "responses": {
+          "200": {
+            "description": "Membres"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Inviter un membre",
+        "operationId": "inviteMember",
+        "tags": [
+          "Members"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "role"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "owner",
+                      "admin",
+                      "member",
+                      "viewer"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Invitation envoyée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/accounts/{id}/billing": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Informations de facturation B2B",
+        "operationId": "getBilling",
+        "tags": [
+          "Billing"
+        ],
+        "responses": {
+          "200": {
+            "description": "Facturation"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/accounts/{id}/usage": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Consommation API du compte",
+        "operationId": "getUsage",
+        "tags": [
+          "Usage"
+        ],
+        "responses": {
+          "200": {
+            "description": "Consommation"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountCreate": {
+        "type": "object",
+        "required": [
+          "account_id",
+          "company_name",
+          "billing_email",
+          "plan"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "pattern": "^ACC-[0-9]{3}$"
+          },
+          "company_name": {
+            "type": "string",
+            "example": "Devoteam nexDigital"
+          },
+          "billing_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "plan": {
+            "type": "string",
+            "enum": [
+              "free",
+              "starter",
+              "business",
+              "enterprise"
+            ]
+          },
+          "vat_number": {
+            "type": "string",
+            "example": "FR12345678901"
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "street": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "country": {
+                "type": "string",
+                "example": "FR"
+              }
+            }
+          }
+        }
+      },
+      "AccountUpdate": {
+        "type": "object",
+        "properties": {
+          "company_name": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "billing_email": {
+            "type": "string"
+          }
+        }
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "example": "ACC-001"
+          },
+          "company_name": {
+            "type": "string"
+          },
+          "billing_email": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "member_count": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "trial"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

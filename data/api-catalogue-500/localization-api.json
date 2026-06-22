@@ -1,0 +1,216 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Localization API",
+    "version": "1.0.0",
+    "x-api-id": "localization-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Localisation",
+    "description": "Traductions et internationalisation. Langues, devises et formats régionaux. DIFFÉRENCE vs geolocation-api : Localization = textes et formats culturels (i18n), Geolocation = coordonnées GPS.",
+    "x-false-positive-warning": "Coordonnées GPS → geolocation-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/l10n/translations/{lang}": {
+      "parameters": [
+        {
+          "name": "lang",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "fr"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Toutes les traductions d'une langue",
+        "operationId": "getTranslations",
+        "tags": [
+          "Translations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Traductions"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/l10n/currencies": {
+      "get": {
+        "summary": "Devises supportées avec taux de change",
+        "operationId": "getCurrencies",
+        "tags": [
+          "Currencies"
+        ],
+        "responses": {
+          "200": {
+            "description": "Devises"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/l10n/translate": {
+      "post": {
+        "summary": "Traduire un texte dynamiquement",
+        "operationId": "translateText",
+        "tags": [
+          "Translations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "target_lang"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "source_lang": {
+                    "type": "string",
+                    "default": "fr"
+                  },
+                  "target_lang": {
+                    "type": "string",
+                    "example": "en"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Texte traduit"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/l10n/formats/{country}": {
+      "parameters": [
+        {
+          "name": "country",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "FR"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Formats régionaux (date, nombre, monnaie)",
+        "operationId": "getFormats",
+        "tags": [
+          "Formats"
+        ],
+        "responses": {
+          "200": {
+            "description": "Formats"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

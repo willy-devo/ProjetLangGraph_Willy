@@ -1,0 +1,344 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Payment API",
+    "version": "2.0.0",
+    "x-api-id": "payment-api-v2",
+    "x-api-version": "v2",
+    "x-status": "deprecated",
+    "x-team": "Equipe Finance",
+    "x-domain": "Finance",
+    "description": "Version 2 de l'API paiement — DEPRECATED depuis 2024, migrer vers v3. Introduit PayPal et SEPA, le mode capture manuelle et les remboursements partiels. Incompatible avec v1 (ID integer → string PAY-XXXX).",
+    "x-breaking-changes-from-previous": [
+      "ID integer → string PAY-XXXX",
+      "Méthodes PayPal et SEPA ajoutées",
+      "capture_mode: immediate | manual",
+      "Endpoint /refund dédié (remplace DELETE)",
+      "amount_refunded ajouté à la réponse"
+    ],
+    "x-breaking-changes-in-next": [
+      "v3 ajoute BNPL (3x/4x) et crypto (BTC, ETH, USDC)",
+      "v3 ajoute dispute management (chargebacks)",
+      "v3 ajoute réconciliation bancaire automatique"
+    ],
+    "x-successor": "payment-api-v3"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/payments": {
+      "post": {
+        "summary": "Initier paiement (card/PayPal/SEPA)",
+        "operationId": "createPaymentV2",
+        "tags": [
+          "Payments"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentV2Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Initié"
+          },
+          "402": {
+            "description": "Refusé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les paiements",
+        "operationId": "listPaymentsV2",
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "authorized",
+                "captured",
+                "refunded",
+                "failed"
+              ]
+            }
+          },
+          {
+            "name": "order_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paiements"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/payments/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^PAY-[0-9]{4}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut d'un paiement",
+        "operationId": "getPaymentV2",
+        "tags": [
+          "Payments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/payments/{id}/capture": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Capturer un paiement pré-autorisé (mode manual)",
+        "operationId": "capturePaymentV2",
+        "tags": [
+          "Payments"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "description": "Partiel possible"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Capturé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/payments/{id}/refund": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Remboursement total ou partiel",
+        "operationId": "refundPaymentV2",
+        "tags": [
+          "Payments"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "description": "Si absent: remboursement total"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remboursement initié"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PaymentV2Create": {
+        "type": "object",
+        "required": [
+          "amount",
+          "currency",
+          "method",
+          "order_id"
+        ],
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 89.99
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "card",
+              "paypal",
+              "sepa",
+              "wallet"
+            ],
+            "description": "PayPal et SEPA nouveaux en v2"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "card_token": {
+            "type": "string"
+          },
+          "capture_mode": {
+            "type": "string",
+            "enum": [
+              "immediate",
+              "manual"
+            ],
+            "default": "immediate",
+            "description": "Nouveau en v2"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

@@ -1,0 +1,298 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Inventory API",
+    "version": "3.0.0",
+    "x-api-id": "inventory-api",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Logistique",
+    "x-domain": "Supply Chain",
+    "description": "Stocks et inventaires produits en temps réel. Alertes rupture et réapprovisionnement automatique. DIFFÉRENCE vs warehouse-api : Inventory = quantités (combien ?), Warehouse = emplacements physiques (où ?).",
+    "x-false-positive-warning": "Emplacements physiques → warehouse-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/inventory": {
+      "get": {
+        "summary": "Inventaire global",
+        "operationId": "listInventory",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "name": "below_threshold",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inventaire"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/inventory/{productId}": {
+      "delete": {
+        "summary": "Archiver un produit de l'inventaire",
+        "operationId": "deleteInventory",
+        "tags": [
+          "Inventory"
+        ],
+        "responses": {
+          "204": {
+            "description": "Archivé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/inventory/{productId}/stock": {
+      "parameters": [
+        {
+          "name": "productId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Mettre à jour le stock",
+        "operationId": "updateStock",
+        "tags": [
+          "Inventory"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "quantity",
+                  "operation"
+                ],
+                "properties": {
+                  "quantity": {
+                    "type": "integer"
+                  },
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "set",
+                      "add",
+                      "subtract"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "sale",
+                      "return",
+                      "adjustment",
+                      "restock"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/inventory/alerts": {
+      "post": {
+        "summary": "Configurer une alerte de rupture",
+        "operationId": "createInventoryAlert",
+        "tags": [
+          "Alerts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "product_id",
+                  "threshold"
+                ],
+                "properties": {
+                  "product_id": {
+                    "type": "string"
+                  },
+                  "threshold": {
+                    "type": "integer",
+                    "description": "Seuil minimum avant alerte"
+                  },
+                  "notify_email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alerte configurée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/inventory/restock": {
+      "post": {
+        "summary": "Déclencher un réapprovisionnement",
+        "operationId": "restockInventory",
+        "tags": [
+          "Inventory"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "product_id",
+                  "quantity"
+                ],
+                "properties": {
+                  "product_id": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "integer"
+                  },
+                  "supplier_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Réapprovisionnement lancé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

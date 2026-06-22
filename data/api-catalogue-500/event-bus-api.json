@@ -1,0 +1,145 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Event Bus API",
+    "version": "1.0.0",
+    "x-api-id": "event-bus-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Divers",
+    "x-domain": "Cross",
+    "description": "Bus d'evenements. Publication, souscription et replay. DIFFERENCE vs streaming-api : Event Bus = evenements metier asynchrones, Streaming = flux donnees haute frequence.",
+    "x-false-positive-warning": "Flux haute frequence -> streaming-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/events": {
+      "post": {
+        "summary": "Publier evenement",
+        "operationId": "publishEvent",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Types evenements",
+        "operationId": "listEventTypes",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/events/subscriptions": {
+      "get": {
+        "summary": "Abonnements",
+        "operationId": "listEventSubscriptions",
+        "tags": [
+          "Subscriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "S'abonner",
+        "operationId": "createEventSubscription",
+        "tags": [
+          "Subscriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/events/replay/{correlationId}": {
+      "parameters": [
+        {
+          "name": "correlationId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Rejouer evenements",
+        "operationId": "replayEvents",
+        "tags": [
+          "Replay"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

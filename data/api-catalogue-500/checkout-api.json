@@ -1,0 +1,330 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Checkout API",
+    "version": "1.0.0",
+    "x-api-id": "checkout-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Commerce",
+    "x-domain": "E-Commerce",
+    "description": "Tunnel d'achat et validation de commande. Orchestration du processus checkout : adresse, livraison, paiement. DIFFÉRENCE vs cart-api : Cart stocke les articles, Checkout orchestre les étapes de validation (adresse→livraison→paiement→confirmation). DIFFÉRENCE vs order-api : Checkout est le processus avant la commande, Order est le résultat après.",
+    "x-false-positive-warning": "Panier d'articles → cart-api. Commande confirmée → order-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/checkout/start": {
+      "post": {
+        "summary": "Démarrer une session checkout depuis le panier",
+        "operationId": "startCheckout",
+        "tags": [
+          "Checkout"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cart_id"
+                ],
+                "properties": {
+                  "cart_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session checkout créée avec ID"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/checkout/{sessionId}/address": {
+      "parameters": [
+        {
+          "name": "sessionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Étape 1 : Définir l'adresse de livraison",
+        "operationId": "setCheckoutAddress",
+        "tags": [
+          "Checkout"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "shipping_address"
+                ],
+                "properties": {
+                  "shipping_address": {
+                    "type": "object"
+                  },
+                  "billing_address": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Adresse enregistrée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/checkout/{sessionId}/shipping": {
+      "parameters": [
+        {
+          "name": "sessionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Étape 2 : Options de livraison disponibles",
+        "operationId": "getCheckoutShipping",
+        "tags": [
+          "Checkout"
+        ],
+        "responses": {
+          "200": {
+            "description": "Options de livraison avec tarifs"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Sélectionner une option de livraison",
+        "operationId": "selectCheckoutShipping",
+        "tags": [
+          "Checkout"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "shipping_option_id"
+                ],
+                "properties": {
+                  "shipping_option_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Option sélectionnée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/checkout/{sessionId}/payment": {
+      "parameters": [
+        {
+          "name": "sessionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Étape 3 : Définir le moyen de paiement",
+        "operationId": "setCheckoutPayment",
+        "tags": [
+          "Checkout"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "payment_method"
+                ],
+                "properties": {
+                  "payment_method": {
+                    "type": "string",
+                    "enum": [
+                      "card",
+                      "paypal",
+                      "sepa",
+                      "wallet"
+                    ]
+                  },
+                  "card_token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Paiement défini"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/checkout/{sessionId}/confirm": {
+      "parameters": [
+        {
+          "name": "sessionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Étape finale : Confirmer et créer la commande",
+        "operationId": "confirmCheckout",
+        "tags": [
+          "Checkout"
+        ],
+        "responses": {
+          "201": {
+            "description": "Commande créée — order_id retourné"
+          },
+          "402": {
+            "description": "Paiement refusé"
+          },
+          "409": {
+            "description": "Stock insuffisant"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

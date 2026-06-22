@@ -1,0 +1,253 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MFA API",
+    "version": "1.0.0",
+    "x-api-id": "mfa-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Identity",
+    "x-domain": "Identity & Access",
+    "description": "Authentification multi-facteurs. TOTP, SMS, et clés hardware (FIDO2/WebAuthn). DIFFÉRENCE vs user-api : MFA API gère tous les facteurs d'authentification (pas seulement le 2FA Google), User API gère l'identité. DIFFÉRENCE vs sms-api : MFA SMS passe par MFA API pour l'OTP d'authentification.",
+    "x-false-positive-warning": "Identité utilisateur → user-api. SMS marketing → sms-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/mfa/enroll": {
+      "post": {
+        "summary": "Enrôler un nouveau facteur MFA",
+        "operationId": "enrollMFA",
+        "tags": [
+          "MFA"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "factor_type"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "string"
+                  },
+                  "factor_type": {
+                    "type": "string",
+                    "enum": [
+                      "totp",
+                      "sms",
+                      "fido2"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Facteur enrôlé (secret TOTP ou challenge FIDO2)"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/mfa/verify": {
+      "post": {
+        "summary": "Vérifier un facteur MFA",
+        "operationId": "verifyMFA",
+        "tags": [
+          "MFA"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "factor_type",
+                  "code"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "string"
+                  },
+                  "factor_type": {
+                    "type": "string",
+                    "enum": [
+                      "totp",
+                      "sms",
+                      "fido2"
+                    ]
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vérifié"
+          },
+          "401": {
+            "description": "Code invalide"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/mfa/{userId}/factors": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Facteurs MFA actifs d'un utilisateur",
+        "operationId": "getMFAFactors",
+        "tags": [
+          "MFA"
+        ],
+        "responses": {
+          "200": {
+            "description": "Facteurs"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/mfa/{userId}/factors/{factorId}": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "factorId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "summary": "Révoquer un facteur MFA",
+        "operationId": "revokeMFAFactor",
+        "tags": [
+          "MFA"
+        ],
+        "responses": {
+          "204": {
+            "description": "Révoqué"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Non autorisé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Non trouvé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

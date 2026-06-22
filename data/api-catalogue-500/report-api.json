@@ -1,0 +1,355 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Report API",
+    "version": "1.0.0",
+    "x-api-id": "report-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Data",
+    "x-domain": "Analytics & BI",
+    "description": "Rapport spécifique à une ressource métier — vue synthétique d'une entité (commande, client, projet). Génère un rapport contextuel sur demande. DIFFÉRENCE vs reporting-api : Reporting API génère des rapports périodiques planifiés sur des populations de données (ex: rapport mensuel des ventes), Report API génère un rapport contextuel instantané sur une ressource spécifique (ex: rapport de la commande ORD-0042). DIFFÉRENCE vs analytics-api : Analytics = exploration interactive de métriques agrégées, Report = document de synthèse sur une entité précise.",
+    "x-false-positive-warning": "Rapports planifiés sur populations → reporting-api. Exploration métriques temps réel → analytics-api. Document PDF légal → invoice-api ou document-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/report/{resourceType}/{resourceId}": {
+      "parameters": [
+        {
+          "name": "resourceType",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "order",
+              "customer",
+              "project",
+              "contract",
+              "employee",
+              "product"
+            ]
+          }
+        },
+        {
+          "name": "resourceId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Générer un rapport contextuel sur une ressource",
+        "operationId": "generateReport",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "pdf",
+                "html"
+              ],
+              "default": "json"
+            }
+          },
+          {
+            "name": "include_history",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "fr"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rapport complet de la ressource"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/report/batch": {
+      "post": {
+        "summary": "Générer plusieurs rapports en une fois",
+        "operationId": "batchReports",
+        "tags": [
+          "Reports"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "resources"
+                ],
+                "properties": {
+                  "resources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "json",
+                      "pdf",
+                      "html"
+                    ]
+                  },
+                  "zip_output": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Génération asynchrone — zip retourné"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/report/templates": {
+      "get": {
+        "summary": "Templates de rapport disponibles par type de ressource",
+        "operationId": "listReportTemplates",
+        "tags": [
+          "Templates"
+        ],
+        "responses": {
+          "200": {
+            "description": "Templates"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un template de rapport custom",
+        "operationId": "createReportTemplate",
+        "tags": [
+          "Templates"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "resource_type",
+                  "sections"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "resource_type": {
+                    "type": "string"
+                  },
+                  "sections": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "summary",
+                        "timeline",
+                        "financials",
+                        "kpis",
+                        "activity"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Template créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/report/scheduled": {
+      "post": {
+        "summary": "Planifier un rapport récurrent sur une ressource",
+        "operationId": "scheduleReport",
+        "tags": [
+          "Reports"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "resource_type",
+                  "resource_id",
+                  "cron",
+                  "recipients"
+                ],
+                "properties": {
+                  "resource_type": {
+                    "type": "string"
+                  },
+                  "resource_id": {
+                    "type": "string"
+                  },
+                  "cron": {
+                    "type": "string",
+                    "example": "0 8 1 * *"
+                  },
+                  "recipients": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "email"
+                    }
+                  },
+                  "format": {
+                    "type": "string",
+                    "default": "pdf"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rapport planifié"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

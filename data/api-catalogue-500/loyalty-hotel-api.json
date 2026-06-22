@@ -1,0 +1,119 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Loyalty Hotel API",
+    "version": "1.0.0",
+    "x-api-id": "loyalty-hotel-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Tourisme",
+    "x-domain": "Tourism",
+    "description": "Programme fidélité hôtelier. Points, statuts et avantages. DIFFERENCE vs loyalty-points-api : Loyalty Hotel = programme fidélité hôtel (nuitées, upgrades), Loyalty Points = programme fidélité commerce générique.",
+    "x-false-positive-warning": "Fidélité commerce generique -> loyalty-points-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/loyalty/hotel/{memberId}": {
+      "parameters": [
+        {
+          "name": "memberId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Compte fidelite",
+        "operationId": "getHotelLoyaltyAccount",
+        "tags": [
+          "Loyalty"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Gagner points",
+        "operationId": "earnHotelPoints",
+        "tags": [
+          "Loyalty"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/loyalty/hotel/{memberId}/status": {
+      "parameters": [
+        {
+          "name": "memberId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Avantages statut",
+        "operationId": "getHotelBenefits",
+        "tags": [
+          "Status"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Health Check API",
+    "version": "1.0.0",
+    "x-api-id": "health-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Infrastructure",
+    "description": "Monitoring de la santé des services. Status, disponibilité et métriques de performance."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "summary": "Statut global de la plateforme",
+        "operationId": "getHealth",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Tout OK"
+          },
+          "503": {
+            "description": "Service(s) dégradé(s)"
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/health/services": {
+      "get": {
+        "summary": "Statut de chaque microservice",
+        "operationId": "getServicesHealth",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statuts"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/health/dependencies": {
+      "get": {
+        "summary": "Dépendances externes (DB, cache, APIs)",
+        "operationId": "getDependenciesHealth",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Dépendances"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/health/metrics": {
+      "get": {
+        "summary": "Métriques de performance en temps réel",
+        "operationId": "getHealthMetrics",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Métriques"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

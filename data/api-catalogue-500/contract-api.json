@@ -1,0 +1,484 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Contract API",
+    "version": "1.0.0",
+    "x-api-id": "contract-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Legal",
+    "x-domain": "Operations",
+    "description": "Gestion des contrats juridiques. Rédaction, négociation, signature et suivi des échéances contractuelles. DIFFÉRENCE vs document-api : Contract API gère le cycle de vie juridique complet (négociation, versions, obligations, renouvellement), Document API génère des documents depuis des templates. DIFFÉRENCE vs invoice-api : Contract est un accord juridique entre parties, Invoice est un document fiscal de facturation.",
+    "x-false-positive-warning": "Génération de documents depuis template → document-api. Facturation → invoice-api. Signature électronique seule → document-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/contracts": {
+      "post": {
+        "summary": "Créer un contrat",
+        "operationId": "createContract",
+        "tags": [
+          "Contracts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contrat créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les contrats",
+        "operationId": "listContracts",
+        "tags": [
+          "Contracts"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "review",
+                "negotiation",
+                "signed",
+                "active",
+                "expired",
+                "terminated"
+              ]
+            }
+          },
+          {
+            "name": "counterparty_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiring_in_days",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contrats"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/contracts/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^CTR-[0-9]{4}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Contrat complet avec historique de versions",
+        "operationId": "getContract",
+        "tags": [
+          "Contracts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Contrat"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modifier le contrat (crée une nouvelle version)",
+        "operationId": "updateContract",
+        "tags": [
+          "Contracts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nouvelle version créée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/contracts/{id}/sign": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Envoyer en signature aux parties",
+        "operationId": "signContract",
+        "tags": [
+          "Contracts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "signatories"
+                ],
+                "properties": {
+                  "signatories": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "party_a",
+                            "party_b",
+                            "witness"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "signature_method": {
+                    "type": "string",
+                    "enum": [
+                      "eidas_simple",
+                      "eidas_advanced",
+                      "eidas_qualified"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Invitations de signature envoyées"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/contracts/{id}/obligations": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Obligations contractuelles et échéances",
+        "operationId": "getObligations",
+        "tags": [
+          "Obligations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Obligations"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter une obligation (livrable, paiement, etc.)",
+        "operationId": "addObligation",
+        "tags": [
+          "Obligations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "due_date",
+                  "type"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "due_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "payment",
+                      "delivery",
+                      "report",
+                      "renewal"
+                    ]
+                  },
+                  "amount": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Obligation ajoutée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/contracts/{id}/renew": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Renouveler un contrat expiré ou arrivant à terme",
+        "operationId": "renewContract",
+        "tags": [
+          "Contracts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "new_end_date"
+                ],
+                "properties": {
+                  "new_end_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "changes": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contrat renouvelé — nouvelle version créée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ContractCreate": {
+        "type": "object",
+        "required": [
+          "title",
+          "counterparty_id",
+          "type",
+          "start_date",
+          "end_date"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "counterparty_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "nda",
+              "sla",
+              "partnership",
+              "employment",
+              "purchase",
+              "license",
+              "service"
+            ]
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valeur contractuelle totale"
+          },
+          "currency": {
+            "type": "string",
+            "default": "EUR"
+          },
+          "auto_renew": {
+            "type": "boolean",
+            "default": false
+          },
+          "notice_days": {
+            "type": "integer",
+            "description": "Jours de préavis avant expiration"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

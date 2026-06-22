@@ -1,0 +1,299 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Billing API",
+    "version": "1.0.0",
+    "x-api-id": "billing-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Finance",
+    "x-domain": "Finance",
+    "description": "Cycles de facturation récurrents et abonnements. Prélèvements automatiques, relances impayés, gestion des plans. DIFFÉRENCE vs payment-api : Billing orchestre des paiements récurrents dans le temps, Payment traite une transaction ponctuelle. DIFFÉRENCE vs invoice-api : Billing déclenche les cycles, Invoice génère les PDFs. DIFFÉRENCE vs subscription-api : Billing gère le paiement, Subscription gère les droits d'accès.",
+    "x-false-positive-warning": "Transaction unique → payment-api. Facture PDF → invoice-api. Plan et droits → subscription-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/billing/subscriptions": {
+      "post": {
+        "summary": "Créer un abonnement récurrent",
+        "operationId": "createBillingSubscription",
+        "tags": [
+          "Subscriptions"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingSubCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/billing/subscriptions/{customerId}": {
+      "parameters": [
+        {
+          "name": "customerId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Abonnements actifs d'un client",
+        "operationId": "getBillingSubscriptions",
+        "tags": [
+          "Subscriptions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Abonnements"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/billing/subscriptions/{id}/cancel": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Résilier un abonnement",
+        "operationId": "cancelBillingSubscription",
+        "tags": [
+          "Subscriptions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "end_of_period": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Si true, actif jusqu'à fin de période payée"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Résilié"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/billing/invoices/{customerId}": {
+      "parameters": [
+        {
+          "name": "customerId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique des factures",
+        "operationId": "getBillingInvoices",
+        "tags": [
+          "Invoices"
+        ],
+        "responses": {
+          "200": {
+            "description": "Factures"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/billing/retry/{invoiceId}": {
+      "parameters": [
+        {
+          "name": "invoiceId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Relancer un paiement impayé",
+        "operationId": "retryBillingPayment",
+        "tags": [
+          "Invoices"
+        ],
+        "responses": {
+          "200": {
+            "description": "Relance initiée"
+          },
+          "402": {
+            "description": "Refusé à nouveau"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BillingSubCreate": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "plan_id",
+          "payment_method"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "plan_id": {
+            "type": "string",
+            "example": "PLAN-PRO-MONTHLY"
+          },
+          "payment_method": {
+            "type": "string",
+            "enum": [
+              "card",
+              "sepa"
+            ]
+          },
+          "card_token": {
+            "type": "string"
+          },
+          "trial_days": {
+            "type": "integer",
+            "default": 0
+          },
+          "billing_cycle": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "quarterly",
+              "annually"
+            ],
+            "default": "monthly"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

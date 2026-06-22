@@ -1,0 +1,335 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Tag API",
+    "version": "1.0.0",
+    "x-api-id": "tag-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Operations",
+    "description": "Tags libres et labels sur les ressources (produits, tickets, contrats, clients). Taxonomie folksonomy. DIFFÉRENCE vs segmentation-api : Tag = étiquette libre assignée manuellement à une ressource spécifique, Segmentation = groupe dynamique calculé selon des règles comportementales sur des populations d'utilisateurs. DIFFÉRENCE vs product-catalog-api : Tag = label libre multi-domaine, Category = hiérarchie structurée propre au catalogue produit.",
+    "x-false-positive-warning": "Groupes dynamiques d'utilisateurs → segmentation-api. Hiérarchie de catégories produits → product-catalog-api. Métadonnées structurées → attributes."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/tags": {
+      "get": {
+        "summary": "Lister tous les tags disponibles",
+        "operationId": "listTags",
+        "tags": [
+          "Tags"
+        ],
+        "parameters": [
+          {
+            "name": "resource_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "product",
+                "ticket",
+                "contract",
+                "customer",
+                "order",
+                "task"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tags"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un tag",
+        "operationId": "createTag",
+        "tags": [
+          "Tags"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string",
+                    "example": "#FF5733"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tags/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Mettre à jour un tag",
+        "operationId": "updateTag",
+        "tags": [
+          "Tags"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Supprimer un tag (dé-tagge toutes les ressources associées)",
+        "operationId": "deleteTag",
+        "tags": [
+          "Tags"
+        ],
+        "responses": {
+          "204": {
+            "description": "Supprimé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tags/assign": {
+      "post": {
+        "summary": "Assigner des tags à une ressource",
+        "operationId": "assignTags",
+        "tags": [
+          "Tags"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "resource_type",
+                  "resource_id",
+                  "tag_ids"
+                ],
+                "properties": {
+                  "resource_type": {
+                    "type": "string",
+                    "enum": [
+                      "product",
+                      "ticket",
+                      "contract",
+                      "customer",
+                      "order",
+                      "task"
+                    ]
+                  },
+                  "resource_id": {
+                    "type": "string"
+                  },
+                  "tag_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tags assignés"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tags/resources": {
+      "get": {
+        "summary": "Ressources portant un ou plusieurs tags",
+        "operationId": "getTaggedResources",
+        "tags": [
+          "Tags"
+        ],
+        "parameters": [
+          {
+            "name": "tag_ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "IDs séparés par virgule"
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operator",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AND",
+                "OR"
+              ],
+              "default": "AND"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ressources tagguées"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

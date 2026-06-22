@@ -1,0 +1,349 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Search API",
+    "version": "3.0.0",
+    "x-api-id": "search-api-v3",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "E-Commerce",
+    "description": "Version actuelle. Introduit la recherche conversationnelle (LLM), les synonymes configurables, le merchandising et le ranking A/B en production. DIFFÉRENCE vs search-api-v2 : v3 ajoute la couche LLM pour les requêtes en langage naturel et le merchandising manuel.",
+    "x-breaking-changes-from-previous": [
+      "conversational: mode de recherche LLM (langage naturel complet)",
+      "synonyms_id: référence un dictionnaire de synonymes configuré",
+      "merchandising_rules: boost/bury de produits spécifiques",
+      "explain: retourne le score de pertinence expliqué",
+      "spell_correction: correction automatique des fautes",
+      "query_rewriting: réécriture IA de la requête avant recherche"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/search": {
+      "get": {
+        "summary": "Recherche hybride + LLM conversationnelle",
+        "operationId": "searchV3",
+        "tags": [
+          "Search"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lexical",
+                "semantic",
+                "hybrid",
+                "conversational"
+              ],
+              "default": "hybrid"
+            },
+            "description": "conversational = mode LLM — nouveau en v3"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "synonyms_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Nouveau en v3"
+          },
+          {
+            "name": "explain",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Retourne les scores de pertinence"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résultats avec explication optionnelle"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/search/synonyms": {
+      "post": {
+        "summary": "Créer un dictionnaire de synonymes (nouveau en v3)",
+        "operationId": "createSynonyms",
+        "tags": [
+          "Synonyms"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "synonyms"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "synonyms": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "terms": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dictionnaire créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les dictionnaires",
+        "operationId": "listSynonyms",
+        "tags": [
+          "Synonyms"
+        ],
+        "responses": {
+          "200": {
+            "description": "Dictionnaires"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/search/merchandising": {
+      "post": {
+        "summary": "Créer règle de merchandising (boost/bury — nouveau en v3)",
+        "operationId": "createMerchandising",
+        "tags": [
+          "Merchandising"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "query_pattern",
+                  "action"
+                ],
+                "properties": {
+                  "query_pattern": {
+                    "type": "string",
+                    "example": "chaussures"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "boost",
+                      "bury",
+                      "pin"
+                    ]
+                  },
+                  "product_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "position": {
+                    "type": "integer",
+                    "description": "Pour l'action pin"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Règle créée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/search/analytics": {
+      "get": {
+        "summary": "Analytics de recherche (requêtes sans résultat, taux de clic)",
+        "operationId": "getSearchAnalytics",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "no_results",
+                "click_through",
+                "conversion",
+                "top_queries"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analytics de recherche"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — Devoteam nexDigital"
+      }
+    }
+  }
+}

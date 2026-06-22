@@ -1,0 +1,171 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Identity Governance API",
+    "version": "1.0.0",
+    "x-api-id": "identity-governance-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Cybersécurité",
+    "x-domain": "Cybersecurity",
+    "description": "Gouvernance des identités. Cycle de vie, rôles et séparation des tâches. DIFFERENCE vs permission-api : Identity Governance = gouvernance cycle de vie identités, Permission = contrôle accès RBAC.",
+    "x-false-positive-warning": "Contrôle accès RBAC -> permission-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/identity/governance": {
+      "get": {
+        "summary": "Statut gouvernance",
+        "operationId": "getIdentityGovernanceStatus",
+        "tags": [
+          "Governance"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/identity/roles": {
+      "get": {
+        "summary": "Rôles",
+        "operationId": "listRoles",
+        "tags": [
+          "Roles"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer rôle",
+        "operationId": "createRole",
+        "tags": [
+          "Roles"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/identity/sod": {
+      "get": {
+        "summary": "Règles séparation tâches",
+        "operationId": "getSoDRules",
+        "tags": [
+          "SoD"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Vérifier conflit",
+        "operationId": "checkSoDConflict",
+        "tags": [
+          "SoD"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/identity/lifecycle": {
+      "get": {
+        "summary": "Cycle de vie",
+        "operationId": "getIdentityLifecycle",
+        "tags": [
+          "Lifecycle"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Provisionner",
+        "operationId": "provisionIdentity",
+        "tags": [
+          "Lifecycle"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

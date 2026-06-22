@@ -1,0 +1,206 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Logistics Tracking API",
+    "version": "1.0.0",
+    "x-api-id": "logistics-tracking-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Logistique",
+    "x-domain": "Supply Chain",
+    "description": "Tracking unifié multi-transporteurs. Agrégation des statuts de tous les transporteurs en une seule API."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/tracking/{code}": {
+      "parameters": [
+        {
+          "name": "code",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Suivi d'un colis par numéro de tracking",
+        "operationId": "trackPackage",
+        "tags": [
+          "Tracking"
+        ],
+        "parameters": [
+          {
+            "name": "carrier",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "chronopost",
+                "colissimo",
+                "ups",
+                "fedex",
+                "dhl",
+                "auto"
+              ],
+              "default": "auto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statut de livraison"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracking/batch": {
+      "post": {
+        "summary": "Suivi de plusieurs colis simultanément",
+        "operationId": "trackBatchPackages",
+        "tags": [
+          "Tracking"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tracking_codes"
+                ],
+                "properties": {
+                  "tracking_codes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 50
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statuts groupés"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracking/{code}/events": {
+      "parameters": [
+        {
+          "name": "code",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique complet des événements de livraison",
+        "operationId": "getTrackingEvents",
+        "tags": [
+          "Tracking"
+        ],
+        "responses": {
+          "200": {
+            "description": "Événements"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

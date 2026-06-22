@@ -1,0 +1,410 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Notification API",
+    "version": "2.0.0",
+    "x-api-id": "notification-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Communication",
+    "description": "Version 2 de la Notification API. Ajout des templates multilingues, des préférences utilisateur par canal et du retry automatique. DIFFÉRENCE vs v1 : templates versionnés, opt-out par canal, batching asynchrone.",
+    "x-breaking-changes-from-previous": [
+      "Ajout champ template_id (remplace message brut si fourni)",
+      "channel devient tableau (multi-canal simultané)",
+      "Nouveau endpoint /preferences pour opt-out",
+      "Retry automatique sur échec (3 tentatives)"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/notifications/send": {
+      "post": {
+        "summary": "Envoyer via template ou message brut, multi-canal",
+        "operationId": "sendNotificationV2",
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifV2Send"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Envoyée"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/notifications/batch": {
+      "post": {
+        "summary": "Envoi groupé asynchrone (max 50 000 destinataires)",
+        "operationId": "sendBatchNotificationsV2",
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "channels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "template_id": {
+                    "type": "string"
+                  },
+                  "template_data": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Job asynchrone créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/notifications/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut et logs de livraison",
+        "operationId": "getNotificationV2",
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Annuler si pending",
+        "operationId": "cancelNotificationV2",
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "204": {
+            "description": "Annulée"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/notifications/preferences/{userId}": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Préférences de notification d'un utilisateur",
+        "operationId": "getNotifPreferences",
+        "tags": [
+          "Preferences"
+        ],
+        "responses": {
+          "200": {
+            "description": "Préférences"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour les préférences (opt-out par canal)",
+        "operationId": "updateNotifPreferences",
+        "tags": [
+          "Preferences"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "boolean"
+                  },
+                  "sms": {
+                    "type": "boolean"
+                  },
+                  "push": {
+                    "type": "boolean"
+                  },
+                  "marketing": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/notifications/templates": {
+      "get": {
+        "summary": "Lister les templates de notification",
+        "operationId": "listNotifTemplates",
+        "tags": [
+          "Templates"
+        ],
+        "responses": {
+          "200": {
+            "description": "Templates"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un template multilingue",
+        "operationId": "createNotifTemplate",
+        "tags": [
+          "Templates"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "content"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "object",
+                    "description": "Clé = code langue (fr, en, es...)",
+                    "example": {
+                      "fr": {
+                        "title": "Commande expédiée",
+                        "body": "Votre commande {{order_id}} est en route"
+                      },
+                      "en": {
+                        "title": "Order shipped",
+                        "body": "Your order {{order_id}} is on its way"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Template créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NotifV2Send": {
+        "type": "object",
+        "required": [
+          "user_ids",
+          "channels"
+        ],
+        "properties": {
+          "user_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms",
+                "push"
+              ]
+            },
+            "description": "Multi-canal simultané (nouveau en v2)"
+          },
+          "template_id": {
+            "type": "string",
+            "description": "Si fourni, remplace title+message"
+          },
+          "template_data": {
+            "type": "object"
+          },
+          "title": {
+            "type": "string",
+            "description": "Utilisé si pas de template_id"
+          },
+          "message": {
+            "type": "string"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

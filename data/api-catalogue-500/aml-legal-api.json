@@ -1,0 +1,128 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AML Legal API",
+    "version": "1.0.0",
+    "x-api-id": "aml-legal-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Legal",
+    "x-domain": "Legal",
+    "description": "Lutte anti-blanchiment obligations professions juridiques. Declarations TRACFIN avocats/notaires. DIFFERENCE vs aml-api banque : AML Legal = obligations LCB-FT professions juridiques, AML = monitoring transactions bancaires.",
+    "x-false-positive-warning": "Monitoring transactions bancaires -> aml-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/aml-legal/screening": {
+      "post": {
+        "summary": "Cribler transaction",
+        "operationId": "screenTransaction",
+        "tags": [
+          "Screening"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/aml-legal/declarations": {
+      "get": {
+        "summary": "Declarations TRACFIN",
+        "operationId": "listDeclarations",
+        "tags": [
+          "Declarations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Declarer au TRACFIN",
+        "operationId": "submitDeclarationTRACFIN",
+        "tags": [
+          "Declarations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/aml-legal/risk/{clientId}": {
+      "parameters": [
+        {
+          "name": "clientId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Niveau risque client",
+        "operationId": "getClientRiskLevel",
+        "tags": [
+          "Risk"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

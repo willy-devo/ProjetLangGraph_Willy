@@ -1,0 +1,378 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Payment API",
+    "version": "2.0.0",
+    "x-api-id": "payment-api",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Finance",
+    "x-domain": "Finance",
+    "description": "Traitement des transactions de paiement ponctuelles. Carte bancaire, PayPal, virement SEPA, remboursements. DIFFÉRENCE vs billing-api : Payment traite UNE transaction, Billing gère les cycles récurrents. DIFFÉRENCE vs invoice-api : Payment effectue le paiement, Invoice génère le document fiscal. DIFFÉRENCE vs wallet-api : Payment traite les paiements externes (carte/bank), Wallet gère le solde interne.",
+    "x-false-positive-warning": "Abonnements récurrents → billing-api. Facture PDF → invoice-api. Solde crédit interne → wallet-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/payments": {
+      "post": {
+        "summary": "Initier un paiement",
+        "operationId": "createPayment",
+        "tags": [
+          "Payments"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Initié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Payment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "description": "Paiement refusé par l'émetteur"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/payments/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^PAY-[0-9]{4}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut d'un paiement",
+        "operationId": "getPayment",
+        "tags": [
+          "Payments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Payment"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/payments/{id}/refund": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Rembourser (total ou partiel)",
+        "operationId": "refundPayment",
+        "tags": [
+          "Payments"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "description": "Si absent: remboursement total"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remboursement initié"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/payments/capture": {
+      "post": {
+        "summary": "Capturer un paiement pré-autorisé",
+        "operationId": "capturePayment",
+        "tags": [
+          "Payments"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "authorization_id"
+                ],
+                "properties": {
+                  "authorization_id": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Capturé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/payments?orderId={id}": {
+      "get": {
+        "summary": "Paiements d'une commande",
+        "operationId": "getPaymentsByOrder",
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paiements"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PaymentCreate": {
+        "type": "object",
+        "required": [
+          "amount",
+          "currency",
+          "method",
+          "order_id"
+        ],
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 89.99
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "card",
+              "paypal",
+              "sepa",
+              "wallet"
+            ]
+          },
+          "order_id": {
+            "type": "string",
+            "example": "ORD-0042"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "card_token": {
+            "type": "string",
+            "description": "Token Stripe/Adyen — jamais le numéro brut"
+          },
+          "capture_mode": {
+            "type": "string",
+            "enum": [
+              "immediate",
+              "manual"
+            ],
+            "default": "immediate"
+          }
+        }
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "PAY-0001"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "authorized",
+              "captured",
+              "refunded",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "authorized_amount": {
+            "type": "number"
+          },
+          "captured_amount": {
+            "type": "number"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

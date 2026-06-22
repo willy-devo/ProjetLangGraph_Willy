@@ -1,0 +1,118 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Fraud Claims API",
+    "version": "1.0.0",
+    "x-api-id": "fraud-claims-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Assurance",
+    "x-domain": "Insurance",
+    "description": "Détection fraude sinistres. Scoring, signaux d'alerte et investigation. DIFFERENCE vs fraud-detection-api (banque) : Fraud Claims = fraude assurance/sinistres, Fraud Detection = fraude transactions bancaires.",
+    "x-false-positive-warning": "Fraude bancaire -> fraud-detection-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/fraud/claims/score": {
+      "post": {
+        "summary": "Scorer sinistre suspect",
+        "operationId": "scoreFraudClaim",
+        "tags": [
+          "Score"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/fraud/claims/alerts": {
+      "get": {
+        "summary": "Alertes fraude",
+        "operationId": "getFraudClaimAlerts",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Ouvrir investigation",
+        "operationId": "investigateFraudClaim",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/fraud/claims/patterns": {
+      "get": {
+        "summary": "Patterns fraude détectés",
+        "operationId": "getFraudPatterns",
+        "tags": [
+          "Patterns"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Currency Exchange API",
+    "version": "1.0.0",
+    "x-api-id": "currency-exchange-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Tourisme",
+    "x-domain": "Tourism",
+    "description": "Change de devises. Taux temps réel, conversion et bureaux de change. DIFFERENCE vs interest-rate-api : Currency Exchange = taux change devises, Interest Rate = taux intérêt bancaires.",
+    "x-false-positive-warning": "Taux intérêt bancaires -> interest-rate-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/currency/rates": {
+      "get": {
+        "summary": "Taux de change",
+        "operationId": "getExchangeRates",
+        "tags": [
+          "Rates"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/currency/convert": {
+      "post": {
+        "summary": "Convertir montant",
+        "operationId": "convertCurrency",
+        "tags": [
+          "Convert"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/currency/history/{pair}": {
+      "parameters": [
+        {
+          "name": "pair",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Historique taux",
+        "operationId": "getExchangeHistory",
+        "tags": [
+          "History"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

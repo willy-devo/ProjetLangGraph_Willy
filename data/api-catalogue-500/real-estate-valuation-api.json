@@ -1,0 +1,111 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Real Estate Valuation API",
+    "version": "1.0.0",
+    "x-api-id": "real-estate-valuation-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Immobilier",
+    "x-domain": "RealEstate",
+    "description": "Valorisation immobilière par IA. Estimation, comparables et tendances. DIFFERENCE vs property-api : Valuation = estimation valeur marché, Property = fiche descriptive du bien.",
+    "x-false-positive-warning": "Fiche descriptive -> property-api-v3."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/valuation/estimate": {
+      "post": {
+        "summary": "Estimer valeur marche",
+        "operationId": "estimateValue",
+        "tags": [
+          "Valuation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/valuation/{propertyId}": {
+      "parameters": [
+        {
+          "name": "propertyId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Valorisation bien",
+        "operationId": "getPropertyValuation",
+        "tags": [
+          "Valuation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/valuation/comparables": {
+      "post": {
+        "summary": "Biens comparables",
+        "operationId": "getComparables",
+        "tags": [
+          "Comparables"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

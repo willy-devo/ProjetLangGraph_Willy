@@ -1,0 +1,135 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Fraud Telecom API",
+    "version": "1.0.0",
+    "x-api-id": "fraud-telecom-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Telecom",
+    "x-domain": "Telecom",
+    "description": "Fraude telecom. IRSF, SIM swap et appels frauduleux. DIFFERENCE vs fraud-detection-api : Fraud Telecom = usage telecom, Fraud Detection = transactions bancaires.",
+    "x-false-positive-warning": "Fraude bancaire -> fraud-detection-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/fraud-telecom/score": {
+      "post": {
+        "summary": "Scorer usage",
+        "operationId": "scoreTelecomFraud",
+        "tags": [
+          "Score"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/fraud-telecom/sim-swap": {
+      "get": {
+        "summary": "Alertes",
+        "operationId": "getSimSwapAlerts",
+        "tags": [
+          "SIMSwap"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Bloquer",
+        "operationId": "blockSIMSwap",
+        "tags": [
+          "SIMSwap"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/fraud-telecom/alerts": {
+      "get": {
+        "summary": "Alertes",
+        "operationId": "getTelecomFraudAlerts",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Resoudre",
+        "operationId": "resolveTelecomFraudAlert",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

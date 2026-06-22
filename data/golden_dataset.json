@@ -1,0 +1,62 @@
+[
+  {
+    "id": "Q0001",
+    "question": "URGENT faut creer une commande client jen ai besoin la tout de suite cest quoi lapi ?",
+    "expected_apis": [
+      "order-api-v4"
+    ],
+    "category": "simple",
+    "domain": "ecommerce",
+    "difficulty": "medium",
+    "register": "urgent",
+    "phrasing": "question_directe"
+  },
+  {
+    "id": "Q0002",
+    "question": "je veux fetch le profil du user qui vient de se log, quelle api ?",
+    "expected_apis": [
+      "auth-api"
+    ],
+    "category": "simple",
+    "domain": "ecommerce",
+    "difficulty": "medium",
+    "register": "argot",
+    "phrasing": "question_directe"
+  },
+  {
+    "id": "Q0003",
+    "question": "Salut, je bosse sur le nouveau site e-commerce de ma boite et le PO veut une barre de recherche avec de l'autocomplete sur les produits, tu connais l'api qui fait ça ?",
+    "expected_apis": [
+      "search-api-v3"
+    ],
+    "category": "simple",
+    "domain": "ecommerce",
+    "difficulty": "medium",
+    "register": "verbeux",
+    "phrasing": "mise_en_situation"
+  },
+  {
+    "id": "Q0004",
+    "question": "URGENT faut alerter auto qd le stock dun produit passe sous le seuil min, on est en rupture la",
+    "expected_apis": [
+      "inventory-api"
+    ],
+    "category": "simple",
+    "domain": "ecommerce",
+    "difficulty": "medium",
+    "register": "urgent",
+    "phrasing": "imperatif_besoin"
+  },
+  {
+    "id": "Q0005",
+    "question": "Je dois afficher le prix d'un produit avec les promos appliquées, quelle API utiliser ?",
+    "expected_apis": [
+      "pricing-api"
+    ],
+    "category": "simple",
+    "domain": "ecommerce",
+    "difficulty": "easy",
+    "register": "neutre",
+    "phrasing": "question_directe"
+  }
+]

@@ -1,0 +1,328 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Email API",
+    "version": "2.0.0",
+    "x-api-id": "email-api",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Platform",
+    "x-domain": "Communication",
+    "description": "Envoi d'emails transactionnels et marketing avec templates, tracking et gestion des bounces. Canal email seul. DIFFÉRENCE vs notification-api : Email API se spécialise sur l'email avec templates Handlebars, tracking ouverture/clic, listes de suppression. Notification API orchestre plusieurs canaux sans ces fonctionnalités avancées.",
+    "x-false-positive-warning": "Envoi multicanal (email+SMS+push) → notification-api. Chat temps réel → messaging-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/emails/send": {
+      "post": {
+        "summary": "Envoyer un email transactionnel",
+        "operationId": "sendEmail",
+        "tags": [
+          "Emails"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSend"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Envoyé"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/emails/batch": {
+      "post": {
+        "summary": "Envoi en masse (max 10 000 destinataires)",
+        "operationId": "sendBatchEmail",
+        "tags": [
+          "Emails"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailBatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Traitement asynchrone lancé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/emails/{id}/status": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Statut de livraison d'un email",
+        "operationId": "getEmailStatus",
+        "tags": [
+          "Emails"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statut"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/emails/templates": {
+      "get": {
+        "summary": "Lister les templates email",
+        "operationId": "listTemplates",
+        "tags": [
+          "Templates"
+        ],
+        "responses": {
+          "200": {
+            "description": "Templates"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un template email (Handlebars)",
+        "operationId": "createTemplate",
+        "tags": [
+          "Templates"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/emails/suppressions": {
+      "get": {
+        "summary": "Lister les adresses supprimées (bounces, unsubscribes)",
+        "operationId": "getSuppressions",
+        "tags": [
+          "Suppressions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Suppressions"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EmailSend": {
+        "type": "object",
+        "required": [
+          "to",
+          "subject",
+          "template_id"
+        ],
+        "properties": {
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "subject": {
+            "type": "string"
+          },
+          "template_id": {
+            "type": "string"
+          },
+          "template_data": {
+            "type": "object",
+            "description": "Variables Handlebars injectées dans le template"
+          },
+          "from_name": {
+            "type": "string",
+            "default": "Devoteam"
+          }
+        }
+      },
+      "EmailBatch": {
+        "type": "object",
+        "properties": {
+          "recipients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "template_id": {
+            "type": "string"
+          }
+        }
+      },
+      "EmailTemplate": {
+        "type": "object",
+        "required": [
+          "name",
+          "subject",
+          "html_body"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "html_body": {
+            "type": "string",
+            "description": "Template Handlebars"
+          },
+          "text_body": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API manquante ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit — ressource déjà existante ou état incompatible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway"
+      }
+    }
+  }
+}

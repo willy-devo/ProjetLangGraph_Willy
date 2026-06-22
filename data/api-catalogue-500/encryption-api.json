@@ -1,0 +1,273 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Encryption API",
+    "version": "1.0.0",
+    "x-api-id": "encryption-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Security",
+    "x-domain": "Security & Compliance",
+    "description": "Chiffrement et gestion des clés cryptographiques. AES, RSA et gestion de vault."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v1/encrypt": {
+      "post": {
+        "summary": "Chiffrer une donnée",
+        "operationId": "encryptData",
+        "tags": [
+          "Encryption"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "data",
+                  "key_id"
+                ],
+                "properties": {
+                  "data": {
+                    "type": "string"
+                  },
+                  "key_id": {
+                    "type": "string"
+                  },
+                  "algorithm": {
+                    "type": "string",
+                    "enum": [
+                      "AES-256-GCM",
+                      "RSA-OAEP"
+                    ],
+                    "default": "AES-256-GCM"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Données chiffrées"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/decrypt": {
+      "post": {
+        "summary": "Déchiffrer une donnée",
+        "operationId": "decryptData",
+        "tags": [
+          "Encryption"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ciphertext",
+                  "key_id"
+                ],
+                "properties": {
+                  "ciphertext": {
+                    "type": "string"
+                  },
+                  "key_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Données déchiffrées"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/keys": {
+      "post": {
+        "summary": "Générer une clé cryptographique",
+        "operationId": "generateKey",
+        "tags": [
+          "Keys"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "AES-256",
+                      "RSA-2048",
+                      "RSA-4096"
+                    ]
+                  },
+                  "rotation_days": {
+                    "type": "integer",
+                    "default": 90
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Clé créée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Lister les clés (métadonnées uniquement)",
+        "operationId": "listKeys",
+        "tags": [
+          "Keys"
+        ],
+        "responses": {
+          "200": {
+            "description": "Clés"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/keys/{id}/rotate": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Rotation d'une clé cryptographique",
+        "operationId": "rotateKey",
+        "tags": [
+          "Keys"
+        ],
+        "responses": {
+          "200": {
+            "description": "Rotation effectuée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

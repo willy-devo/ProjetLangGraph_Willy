@@ -1,0 +1,21 @@
+# Image du BATCH pour Cloud Run Job.
+# Identique à l'image du chat, sauf l'entrypoint : ici on lance le batch d'éval
+# (génère les réponses des 464 questions → écrit dans le Google Sheet → s'arrête).
+#
+# Alternative : garder UNE seule image (Dockerfile) et surcharger la commande à la
+# création du job Cloud Run (--command agentic4api-batch). Ce fichier rend juste
+# l'entrypoint batch explicite dans le repo.
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY pyproject.toml ./
+COPY src ./src
+COPY data ./data
+
+RUN pip install --no-cache-dir -e .
+
+# Un job ne sert pas de requêtes HTTP : pas de PORT, pas d'EXPOSE.
+# Les secrets (GOOGLE_API_KEY, PINECONE_API_KEY, GOOGLE_SA_JSON, SHEET_ID...) sont
+# injectés par Cloud Run depuis Secret Manager en variables d'environnement.
+CMD ["agentic4api-batch"]

@@ -1,0 +1,396 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Invoice API",
+    "version": "2.0.0",
+    "x-api-id": "invoice-api-v2",
+    "x-api-version": "v2",
+    "x-status": "active",
+    "x-team": "Equipe Finance",
+    "x-domain": "Finance",
+    "description": "Version 2 de la facture. Ajout des avoirs (credit notes), facturation en plusieurs langues et signature électronique. DIFFÉRENCE vs v1 : credit_note automatique à l'annulation, multi-devises natif, signature eIDAS.",
+    "x-breaking-changes-from-previous": [
+      "void → génère automatiquement une credit_note (nouvel objet)",
+      "Nouveau champ: locale (langue de la facture)",
+      "signature_url ajouté à la réponse",
+      "line_items renommé items (uniformisation)"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v2/invoices": {
+      "post": {
+        "summary": "Générer une facture multilingue et multi-devise",
+        "operationId": "createInvoiceV2",
+        "tags": [
+          "Invoices"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceV2Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Facture générée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceV2"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/invoices/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^INV-[0-9]{4}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Récupérer une facture",
+        "operationId": "getInvoiceV2",
+        "tags": [
+          "Invoices"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/invoices/{id}/pdf": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "PDF facture dans la langue configurée",
+        "operationId": "downloadInvoiceV2PDF",
+        "tags": [
+          "Invoices"
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/invoices/{id}/void": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Annuler (génère automatiquement un avoir/credit_note)",
+        "operationId": "voidInvoiceV2",
+        "tags": [
+          "Invoices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Annulée — credit_note générée automatiquement"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/invoices/{id}/credit-notes": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Avoirs liés à cette facture",
+        "operationId": "getInvoiceCreditNotes",
+        "tags": [
+          "CreditNotes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Avoirs"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v2/invoices/{id}/sign": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Signer électroniquement (eIDAS)",
+        "operationId": "signInvoice",
+        "tags": [
+          "Invoices"
+        ],
+        "responses": {
+          "200": {
+            "description": "Signée — signature_url disponible"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "InvoiceV2Create": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "order_id",
+          "items",
+          "currency",
+          "locale"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "unit_price": {
+                  "type": "number"
+                },
+                "tax_rate": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR"
+          },
+          "locale": {
+            "type": "string",
+            "description": "Nouveau en v2 — langue du document",
+            "example": "fr"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "InvoiceV2": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "INV-0001"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "tax_amount": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "sent",
+              "paid",
+              "void"
+            ]
+          },
+          "pdf_url": {
+            "type": "string"
+          },
+          "signature_url": {
+            "type": "string",
+            "description": "Nouveau en v2 après signature eIDAS"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}

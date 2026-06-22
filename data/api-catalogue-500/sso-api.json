@@ -1,0 +1,200 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SSO API",
+    "version": "1.0.0",
+    "x-api-id": "sso-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Identity",
+    "x-domain": "Identity & Access",
+    "description": "Single Sign-On SAML 2.0 et OpenID Connect. Fédération d'identité avec les IdP externes (Azure AD, Okta, Google). DIFFÉRENCE vs auth-api : SSO = fédération vers IdP externes, Auth = authentification locale JWT.",
+    "x-false-positive-warning": "Authentification locale → auth-api. Gestion des rôles → permission-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/sso/providers": {
+      "get": {
+        "summary": "Lister les IdP configurés",
+        "operationId": "listSSOProviders",
+        "tags": [
+          "SSO"
+        ],
+        "responses": {
+          "200": {
+            "description": "Providers"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Configurer un IdP SSO",
+        "operationId": "createSSOProvider",
+        "tags": [
+          "SSO"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type",
+                  "metadata_url"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "saml2",
+                      "oidc"
+                    ]
+                  },
+                  "metadata_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "auto_provision": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "IdP configuré"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/sso/login/{providerId}": {
+      "parameters": [
+        {
+          "name": "providerId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Initier le flux SSO (redirection vers IdP)",
+        "operationId": "initSSO",
+        "tags": [
+          "SSO"
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirection vers l'IdP"
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/sso/callback": {
+      "post": {
+        "summary": "Callback SSO (assertion SAML ou code OIDC)",
+        "operationId": "ssoCallback",
+        "tags": [
+          "SSO"
+        ],
+        "responses": {
+          "200": {
+            "description": "JWT local généré"
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Non autorisé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Non trouvé",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(python --version)",
+      "PowerShell(pip --version)",
+      "PowerShell(Get-Content \"c:\\\\Users\\\\willy.vo\\\\Desktop\\\\MySpace\\\\Stage2026\\\\Projet\\\\ProjetLangGraph_Willy\\\\.env\" | Where-Object { $_ -match \"SHEET|GOOGLE|CREDENTIAL\" })"
+    ]
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Supplier Quality API",
+    "version": "1.0.0",
+    "x-api-id": "supplier-quality-api",
+    "x-api-version": "v1",
+    "x-status": "active",
+    "x-team": "Equipe Industrie",
+    "x-domain": "Industry",
+    "description": "Qualite fournisseurs. Evaluation, audits et non-conformites. DIFFERENCE vs quality-control-api : Supplier Quality = qualite entrants fournisseurs, Quality Control = qualite production interne.",
+    "x-false-positive-warning": "Qualite production interne -> quality-control-api."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway"
+    }
+  ],
+  "paths": {
+    "/v1/supplier-quality/{supplierId}": {
+      "parameters": [
+        {
+          "name": "supplierId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Score qualite fournisseur",
+        "operationId": "getSupplierQualityScore",
+        "tags": [
+          "Suppliers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/supplier-quality/audits": {
+      "get": {
+        "summary": "Audits fournisseurs",
+        "operationId": "listSupplierAudits",
+        "tags": [
+          "Audits"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Creer audit",
+        "operationId": "createSupplierAudit",
+        "tags": [
+          "Audits"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/supplier-quality/ncs": {
+      "get": {
+        "summary": "NC fournisseurs",
+        "operationId": "listSupplierNCs",
+        "tags": [
+          "NCs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Declarer NC",
+        "operationId": "createSupplierNC",
+        "tags": [
+          "NCs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

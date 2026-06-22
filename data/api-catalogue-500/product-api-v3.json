@@ -1,0 +1,515 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Product API",
+    "version": "3.0.0",
+    "x-api-id": "product-api-v3",
+    "x-api-version": "v3",
+    "x-status": "active",
+    "x-team": "Equipe Catalog",
+    "x-domain": "E-Commerce",
+    "description": "Version actuelle. Produits enrichis avec SEO, variantes en sous-ressource, category_id lié au catalogue et currency obligatoire. Recommandée pour tous les nouveaux développements.",
+    "x-breaking-changes-from-previous": [
+      "variants→sous-ressource /v3/products/{id}/variants",
+      "category string→category_id (référence product-catalog-api)",
+      "pricing.currency obligatoire (ISO 4217)",
+      "SEO metadata obligatoire pour status=active"
+    ]
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Kong API Gateway — Devoteam nexDigital"
+    }
+  ],
+  "paths": {
+    "/v3/products": {
+      "get": {
+        "summary": "Lister les produits avec SEO et filtres enrichis",
+        "operationId": "listProductsV3",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "draft",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "min_price",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "max_price",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "price_asc",
+                "price_desc",
+                "name_asc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste paginée enrichie"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Créer un produit complet",
+        "operationId": "createProductV3",
+        "tags": [
+          "Products"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductV3Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Créé"
+          },
+          "422": {
+            "description": "SEO manquant pour status=active"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/products/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^PROD-[0-9]{3}$"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Détails complets d'un produit",
+        "operationId": "getProductV3",
+        "tags": [
+          "Products"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Mettre à jour",
+        "operationId": "updateProductV3",
+        "tags": [
+          "Products"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductV3Create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mis à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Archiver le produit",
+        "operationId": "archiveProductV3",
+        "tags": [
+          "Products"
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivé"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/products/{id}/variants": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Variantes d'un produit",
+        "operationId": "getProductVariants",
+        "tags": [
+          "Variants"
+        ],
+        "responses": {
+          "200": {
+            "description": "Variantes"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Ajouter une variante",
+        "operationId": "addProductVariant",
+        "tags": [
+          "Variants"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sku",
+                  "attributes"
+                ],
+                "properties": {
+                  "sku": {
+                    "type": "string"
+                  },
+                  "attributes": {
+                    "type": "object",
+                    "example": {
+                      "color": "rouge",
+                      "size": "M"
+                    }
+                  },
+                  "stock": {
+                    "type": "integer"
+                  },
+                  "price_override": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Variante ajoutée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v3/products/{id}/variants/{variantId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "variantId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Modifier une variante",
+        "operationId": "updateProductVariant",
+        "tags": [
+          "Variants"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mise à jour"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Supprimer une variante",
+        "operationId": "deleteProductVariant",
+        "tags": [
+          "Variants"
+        ],
+        "responses": {
+          "204": {
+            "description": "Supprimée"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SEO": {
+        "type": "object",
+        "required": [
+          "slug",
+          "meta_title",
+          "meta_description"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "t-shirt-blanc-coton"
+          },
+          "meta_title": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "meta_description": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ProductV3Create": {
+        "type": "object",
+        "required": [
+          "name",
+          "sku",
+          "category_id",
+          "pricing"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "category_id": {
+            "type": "string",
+            "description": "Référence product-catalog-api"
+          },
+          "description": {
+            "type": "string"
+          },
+          "pricing": {
+            "type": "object",
+            "required": [
+              "base_price",
+              "currency"
+            ],
+            "properties": {
+              "base_price": {
+                "type": "number"
+              },
+              "sale_price": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string",
+                "example": "EUR"
+              }
+            }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "seo": {
+            "$ref": "#/components/schemas/SEO"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "draft",
+              "archived"
+            ],
+            "default": "draft"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Clé API invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit d'état",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Clé API Kong Gateway — contacter votre équipe platform"
+      }
+    }
+  }
+}
