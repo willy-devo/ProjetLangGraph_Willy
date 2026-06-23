@@ -1,24 +1,22 @@
 """
 Assemble le graphe et expose `build_graph`.
 
-Deux modes contrôlés par RETRIEVAL_MODE dans le .env :
+Mode principal : "agentic" (défaut)
+─────────────────────────────────────
+  Le LLM reçoit `search_apis_tool` comme outil et pilote lui-même les appels
+  Pinecone (ReAct loop). Fidèle au comportement N8N d'origine.
+  Avantage : le LLM peut reformuler sa requête si le 1er résultat est pauvre.
+  Inconvénient : tokens plus élevés, latence variable.
 
-  "rag" (défaut — déterministe)
-    START → guard ─┬─(corrompue)→ corrupted_answer → END
-                   └─(ok)────────→ retrieve → answer → END
-    Pinecone est appelé UNE seule fois, systématiquement, avant le LLM.
-    Avantage : prévisible, facilement debuggable, reproductible.
+Mode optionnel : "rag"
+──────────────────────
+  START → guard ─┬─(corrompue)→ corrupted_answer → END
+                 └─(ok)────────→ retrieve → answer → END
+  Pinecone est appelé UNE seule fois avant le LLM (pipeline fixe).
+  Avantage : prévisible, debuggable, reproductible, tokens stables.
+  Utile pour : comparer les deux architectures sur le golden dataset.
 
-  "agentic" (fidèle au mode N8N — le LLM pilote)
-    Le LLM reçoit `search_apis_tool` comme outil et décide lui-même
-    quand / combien de fois appeler Pinecone (ReAct loop, max 5 itérations).
-    Avantage : le LLM peut reformuler sa requête si le 1er résultat est pauvre.
-    Inconvénient : moins prévisible, tokens plus élevés, latence variable.
-
-`build_graph` renvoie dans les deux cas un graphe dont l'interface d'invoke
-est normalisée : entrée {"question": str}, sortie avec answer_text / final_apis.
-Pour le mode agentic, run_batch.py détecte settings.retrieval_mode et extrait
-la réponse depuis les messages (format create_react_agent).
+Changer de mode : RETRIEVAL_MODE=rag dans le .env (défaut : agentic).
 """
 
 from __future__ import annotations
@@ -80,11 +78,11 @@ def build_graph(checkpointer: MemorySaver | None = None, *, use_memory: bool = T
     use_memory=True  (chat) : compile avec MemorySaver — mémoire par thread_id.
     use_memory=False (batch): sans checkpointer — chaque question est indépendante.
 
-    Le mode (rag / agentic) est lu depuis settings.retrieval_mode.
+    Mode par défaut : "agentic". Passer RETRIEVAL_MODE=rag dans le .env pour le mode fixe.
     """
-    if settings.retrieval_mode == "agentic":
-        return _build_agentic(use_memory=use_memory)
-    return _build_rag(use_memory=use_memory)
+    if settings.retrieval_mode == "rag":
+        return _build_rag(use_memory=use_memory)
+    return _build_agentic(use_memory=use_memory)
 
 
 # Point d'import unique.

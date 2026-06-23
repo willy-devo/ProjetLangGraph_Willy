@@ -27,32 +27,34 @@ from agentic4api.graph.nodes import _parse_apis
 
 
 def _extract_result(state: dict) -> tuple[str, list[str], dict]:
-    """Normalise la sortie du graphe selon le mode (rag ou agentic).
+    """Normalise la sortie du graphe selon le mode (agentic ou rag).
 
     Retourne (answer_text, final_apis, tokens_dict).
-    En mode agentic (create_react_agent), la sortie est dans state["messages"].
+    Mode agentic (défaut) : sortie dans state["messages"] (format create_react_agent).
+    Mode rag (optionnel)  : sortie dans state["answer_text"] / state["final_apis"].
     """
-    if settings.retrieval_mode == "agentic":
-        messages = state.get("messages", [])
-        text = messages[-1].content if messages else ""
-        if not isinstance(text, str):
-            text = str(text)
-        return text, _parse_apis(text), {"tokens_in": 0, "tokens_out": 0, "tokens_total": 0}
+    if settings.retrieval_mode == "rag":
+        text = state.get("answer_text", "")
+        return text, state.get("final_apis", []), {
+            "tokens_in":    state.get("tokens_in", 0),
+            "tokens_out":   state.get("tokens_out", 0),
+            "tokens_think": state.get("tokens_think", 0),
+            "tokens_total": state.get("tokens_total", 0),
+        }
 
-    text = state.get("answer_text", "")
-    return text, state.get("final_apis", []), {
-        "tokens_in":    state.get("tokens_in", 0),
-        "tokens_out":   state.get("tokens_out", 0),
-        "tokens_think": state.get("tokens_think", 0),
-        "tokens_total": state.get("tokens_total", 0),
-    }
+    # Mode agentic — create_react_agent retourne les messages
+    messages = state.get("messages", [])
+    text = messages[-1].content if messages else ""
+    if not isinstance(text, str):
+        text = str(text)
+    return text, _parse_apis(text), {"tokens_in": 0, "tokens_out": 0, "tokens_think": 0, "tokens_total": 0}
 
 
 def _graph_input(question: str) -> dict:
-    """Adapte l'entrée selon le mode."""
-    if settings.retrieval_mode == "agentic":
-        return {"messages": [("human", question)]}
-    return {"question": question}
+    """Adapte l'entrée selon le mode (agentic par défaut, rag optionnel)."""
+    if settings.retrieval_mode == "rag":
+        return {"question": question}
+    return {"messages": [("human", question)]}
 
 
 def run(limit: int | None = None, worksheet: str | None = None) -> list[dict]:
