@@ -1,7 +1,6 @@
 """
-Les nœuds du graphe.
+Les nœuds du graphe (mode RAG optionnel).
 
-- guard    : court-circuite les questions vides/corrompues.
 - retrieve : appelle Pinecone, stocke candidats + scores dans le State.
 - answer   : Gemini décide/formate `RECOMMANDED_APIS: [...]`, et on CAPTURE les tokens.
 
@@ -14,7 +13,6 @@ Pourquoi un transport httpx custom :
 Sur la capture des tokens (OpenAI-compat, validé sur réponse Kong) :
   LangChain normalise prompt_tokens/completion_tokens → input_tokens/output_tokens dans
   usage_metadata. On utilise donc les mêmes clés qu'avec l'API Google native.
-  tokens_think sera toujours 0 : Kong ne remonte pas les reasoning tokens séparément.
 """
 
 from __future__ import annotations
@@ -24,13 +22,13 @@ from functools import lru_cache
 
 import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.tools import tool as lc_tool
 from langchain_openai import ChatOpenAI
 
 from agentic4api.config.settings import settings
 from agentic4api.graph.prompts import SYSTEM_PROMPT
 from agentic4api.graph.retriever import search
 from agentic4api.graph.state import AgentState
+from agentic4api.graph.tools import _format_candidate
 from agentic4api.graph.transports import AsyncKongChatTransport, KongChatTransport
 
 
@@ -82,27 +80,6 @@ def _parse_apis(text: str) -> list[str]:
     if not inner:
         return []
     return [s.strip().strip("`*\"' ") for s in inner.split(",") if s.strip()]
-
-
-# ── Outil Pinecone (mode agentic) ──────────────────────────────────────────
-
-def _format_candidate(c: dict, text_limit: int = 300) -> str:
-    """Formate un candidat Pinecone pour le prompt — même format en RAG et agentic."""
-    return (
-        f"- name: {c['slug']} | title: {c.get('title', '')} "
-        f"| statut: {c.get('status', 'unknown')} | score: {c['score']:.3f}\n"
-        f"  description: {c['text'][:text_limit]}"
-    )
-
-
-@lc_tool
-def search_apis_tool(query: str) -> str:
-    """Recherche sémantique d'APIs internes selon un besoin fonctionnel.
-    Renvoie les candidats avec name, title, statut et description."""
-    results = search(query, top_k=settings.top_k)
-    if not results:
-        return "Aucun résultat trouvé pour cette requête."
-    return "\n".join(_format_candidate(r) for r in results)
 
 
 # ── Nœuds ──────────────────────────────────────────────────────────────────

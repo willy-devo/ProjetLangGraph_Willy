@@ -48,7 +48,8 @@ def _build_agentic(use_memory: bool = False):
     """Graphe agentic : le LLM appelle Pinecone comme outil (ReAct loop)."""
     from langgraph.prebuilt import create_react_agent
 
-    from agentic4api.graph.nodes import _llm, search_apis_tool
+    from agentic4api.graph.nodes import _llm
+    from agentic4api.graph.tools import search_apis_tool
     from agentic4api.graph.prompts import SYSTEM_PROMPT
 
     checkpointer = MemorySaver() if use_memory else None
