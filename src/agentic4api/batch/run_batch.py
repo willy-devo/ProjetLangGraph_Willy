@@ -1,16 +1,21 @@
 """
-CLI : exécute le graphe sur le golden dataset, mesure latence/tokens PAR question,
-écrit le tout dans le Google Sheet. Remplace le webhook n8n.
+CLI : exécute le graphe sur le golden dataset, écrit le tout dans le Google Sheet.
 
-Important — pourquoi invoke séquentiel et pas graph.batch() :
-  La latence par question doit être propre. graph.batch() parallélise les exécutions,
-  qui se chevauchent → impossible de chronométrer une question isolément depuis
-  l'extérieur. On boucle donc en invoke séquentiel (plus lent, mais mesure exacte).
-  Si la latence ne t'intéressait pas, graph.batch() serait plus rapide.
+Deux modes d'exécution :
 
-Lancer :
-    agentic4api-batch                 # tout le golden
-    agentic4api-batch --limit 5       # smoke test sur 5 questions
+  séquentiel (défaut)
+    Une question à la fois → latence exacte par question mesurable.
+    Lancer : agentic4api-batch
+
+  parallèle  (--parallel)
+    Les questions d'un même chunk tournent en parallèle via graph.batch().
+    Plus rapide, mais latency_s = durée du chunk entier (pas par question isolée).
+    Lancer : agentic4api-batch --parallel --batch-size 3
+
+Exemples :
+    agentic4api-batch                              # séquentiel, tout le golden
+    agentic4api-batch --limit 5                    # smoke test 5 questions
+    agentic4api-batch --parallel --batch-size 3    # 3 questions en parallèle
     agentic4api-batch --worksheet run_gemini35flash
 """
 
@@ -18,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import time
+from math import ceil
 
 from agentic4api.batch.golden import load_golden
 from agentic4api.batch.sheet_writer import write_results
@@ -27,12 +33,7 @@ from agentic4api.graph.nodes import _parse_apis
 
 
 def _extract_result(state: dict) -> tuple[str, list[str], dict]:
-    """Normalise la sortie du graphe selon le mode (agentic ou rag).
-
-    Retourne (answer_text, final_apis, tokens_dict).
-    Mode agentic (défaut) : sortie dans state["messages"] (format create_react_agent).
-    Mode rag (optionnel)  : sortie dans state["answer_text"] / state["final_apis"].
-    """
+    """Normalise la sortie selon le mode (agentic par défaut, rag optionnel)."""
     if settings.retrieval_mode == "rag":
         text = state.get("answer_text", "")
         return text, state.get("final_apis", []), {
@@ -51,45 +52,95 @@ def _extract_result(state: dict) -> tuple[str, list[str], dict]:
 
 
 def _graph_input(question: str) -> dict:
-    """Adapte l'entrée selon le mode (agentic par défaut, rag optionnel)."""
+    """Adapte l'entrée selon le mode."""
     if settings.retrieval_mode == "rag":
         return {"question": question}
     return {"messages": [("human", question)]}
 
 
-def run(limit: int | None = None, worksheet: str | None = None) -> list[dict]:
+def _run_sequential(golden: list[dict], graph) -> list[dict]:
+    """Une question à la fois — latence exacte mesurable par question."""
+    rows: list[dict] = []
+    total = len(golden)
+
+    for i, item in enumerate(golden, 1):
+        q = item["question"]
+
+        t0 = time.perf_counter()
+        state = graph.invoke(_graph_input(q))
+        latency_s = round(time.perf_counter() - t0, 3)
+
+        answer_text, final_apis, tokens = _extract_result(state)
+        rows.append({
+            "id":        item.get("id", ""),
+            "chatInput": q,
+            "question":  q,
+            "output":    answer_text,
+            "latency_s": latency_s,
+            **tokens,
+        })
+        print(f"[{i}/{total}] {item.get('id','')} -> {final_apis}  ({latency_s}s)")
+
+        if i < total:
+            time.sleep(settings.batch_wait_s)
+
+    return rows
+
+
+def _run_parallel(golden: list[dict], graph, batch_size: int) -> list[dict]:
+    """Questions par chunks parallèles — latency_s = durée du chunk, pas par question."""
+    rows: list[dict] = []
+    chunks = [golden[i : i + batch_size] for i in range(0, len(golden), batch_size)]
+    total_chunks = len(chunks)
+
+    for ci, chunk in enumerate(chunks, 1):
+        inputs = [_graph_input(item["question"]) for item in chunk]
+
+        t0 = time.perf_counter()
+        # graph.batch() exécute les inputs en parallèle (threads LangGraph)
+        states = graph.batch(inputs)
+        chunk_latency = round(time.perf_counter() - t0, 3)
+
+        for item, state in zip(chunk, states):
+            answer_text, final_apis, tokens = _extract_result(state)
+            rows.append({
+                "id":        item.get("id", ""),
+                "chatInput": item["question"],
+                "question":  item["question"],
+                "output":    answer_text,
+                "latency_s": chunk_latency,   # durée du chunk entier
+                **tokens,
+            })
+            print(f"[chunk {ci}/{total_chunks}] {item.get('id','')} -> {final_apis}")
+
+        print(f"  chunk {ci} terminé en {chunk_latency}s ({len(chunk)} questions)")
+
+        if ci < total_chunks:
+            time.sleep(settings.batch_wait_s)
+
+    return rows
+
+
+def run(
+    limit: int | None = None,
+    worksheet: str | None = None,
+    parallel: bool = False,
+    batch_size: int = 5,
+) -> list[dict]:
     worksheet = worksheet or settings.sheet_worksheet
     golden = load_golden()
     if limit:
         golden = golden[:limit]
 
-    # Graphe sans mémoire : chaque question = exécution indépendante (pas de MemorySaver).
     graph = build_graph(use_memory=False)
 
-    rows: list[dict] = []
-    for i, item in enumerate(golden, 1):
-        q = item["question"]
+    mode_label = f"parallèle (batch_size={batch_size})" if parallel else "séquentiel"
+    print(f"Mode : {mode_label} | {len(golden)} questions | retrieval: {settings.retrieval_mode}")
 
-        t0 = time.perf_counter()  # monotone : robuste aux ajustements d'horloge
-        state = graph.invoke(_graph_input(q))
-        latency_s = round(time.perf_counter() - t0, 3)
-
-        answer_text, final_apis, tokens = _extract_result(state)
-
-        rows.append({
-            "id": item.get("id", ""),
-            "chatInput": q,
-            "question": q,
-            "output": answer_text,
-            "latency_s": latency_s,
-            **tokens,
-        })
-        print(f"[{i}/{len(golden)}] {item.get('id','')} "
-              f"-> {final_apis}  ({latency_s}s)")
-
-        # Rate limiting : pause entre chaque question (identique au Wait N8N, configurable via BATCH_WAIT_S)
-        if i < len(golden):
-            time.sleep(settings.batch_wait_s)
+    if parallel:
+        rows = _run_parallel(golden, graph, batch_size)
+    else:
+        rows = _run_sequential(golden, graph)
 
     write_results(rows, worksheet_name=worksheet)
     print(f"\n[OK] {len(rows)} lignes ecrites dans l'onglet '{worksheet}'.")
@@ -98,10 +149,17 @@ def run(limit: int | None = None, worksheet: str | None = None) -> list[dict]:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Batch d'evaluation -> Google Sheet")
-    p.add_argument("--limit", type=int, default=None, help="N premieres questions (smoke test)")
-    p.add_argument("--worksheet", type=str, default=None, help="Nom de l'onglet cible (defaut : SHEET_WORKSHEET dans .env)")
+    p.add_argument("--limit",      type=int,  default=None,  help="N premieres questions (smoke test)")
+    p.add_argument("--worksheet",  type=str,  default=None,  help="Nom de l'onglet cible")
+    p.add_argument("--parallel",   action="store_true",      help="Exécution parallèle par chunks")
+    p.add_argument("--batch-size", type=int,  default=5,     help="Taille des chunks en mode parallèle (défaut: 5)")
     args = p.parse_args()
-    run(limit=args.limit, worksheet=args.worksheet)
+    run(
+        limit=args.limit,
+        worksheet=args.worksheet,
+        parallel=args.parallel,
+        batch_size=args.batch_size,
+    )
 
 
 if __name__ == "__main__":

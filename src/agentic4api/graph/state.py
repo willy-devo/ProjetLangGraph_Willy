@@ -32,4 +32,3 @@ class AgentState(TypedDict, total=False):
     tokens_out: Annotated[int, operator.add]
     tokens_think: Annotated[int, operator.add]   # calculé : total - in - out (raisonnement interne Gemini)
     tokens_total: Annotated[int, operator.add]
-    # latency_s n'est PAS ici : mesurée bout-en-bout autour de l'invoke dans run_batch.

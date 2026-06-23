@@ -72,5 +72,5 @@ def build_graph(checkpointer: MemorySaver | None = None, *, use_memory: bool = T
     return _build_agentic(use_memory=use_memory)
 
 
-# Point d'import unique.
-graph = build_graph()
+# Point d'import unique — stateless : chaque question repart de zéro.
+graph = build_graph(use_memory=False)
