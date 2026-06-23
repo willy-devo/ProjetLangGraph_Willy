@@ -24,6 +24,7 @@ from functools import lru_cache
 
 import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.tools import tool as lc_tool
 from langchain_openai import ChatOpenAI
 
 from agentic4api.config.settings import settings
@@ -60,10 +61,14 @@ def _usage_delta(response) -> dict:
     LangChain normalise prompt_tokens/completion_tokens → input_tokens/output_tokens.
     """
     u = getattr(response, "usage_metadata", None) or {}
+    t_in    = u.get("input_tokens", 0)
+    t_out   = u.get("output_tokens", 0)
+    t_total = u.get("total_tokens", 0)
     return {
-        "tokens_in": u.get("input_tokens", 0),
-        "tokens_out": u.get("output_tokens", 0),
-        "tokens_total": u.get("total_tokens", 0),
+        "tokens_in":    t_in,
+        "tokens_out":   t_out,
+        "tokens_think": max(0, t_total - t_in - t_out),  # raisonnement interne Gemini
+        "tokens_total": t_total,
     }
 
 
@@ -76,6 +81,27 @@ def _parse_apis(text: str) -> list[str]:
     if not inner:
         return []
     return [s.strip().strip("`*\"' ") for s in inner.split(",") if s.strip()]
+
+
+# ── Outil Pinecone (mode agentic) ──────────────────────────────────────────
+
+def _format_candidate(c: dict, text_limit: int = 300) -> str:
+    """Formate un candidat Pinecone pour le prompt — même format en RAG et agentic."""
+    return (
+        f"- name: {c['slug']} | title: {c.get('title', '')} "
+        f"| statut: {c.get('status', 'unknown')} | score: {c['score']:.3f}\n"
+        f"  description: {c['text'][:text_limit]}"
+    )
+
+
+@lc_tool
+def search_apis_tool(query: str) -> str:
+    """Recherche sémantique d'APIs internes selon un besoin fonctionnel.
+    Renvoie les candidats avec name, title, statut et description."""
+    results = search(query, top_k=settings.top_k)
+    if not results:
+        return "Aucun résultat trouvé pour cette requête."
+    return "\n".join(_format_candidate(r) for r in results)
 
 
 # ── Nœuds ──────────────────────────────────────────────────────────────────
@@ -95,11 +121,10 @@ def retrieve(state: AgentState) -> dict:
 
 def answer(state: AgentState) -> dict:
     candidates = state.get("candidates", [])
-    context = "\n".join(f"- {c['slug']} (score={c['score']:.3f}): {c['text'][:200]}"
-                        for c in candidates)
+    context = "\n".join(_format_candidate(c) for c in candidates)
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Demande : {state['question']}\n\nCandidats :\n{context}"),
+        HumanMessage(content=f"Demande : {state['question']}\n\nCandidats Pinecone :\n{context}"),
     ]
     response = _llm().invoke(messages)
     text = response.content if isinstance(response.content, str) else str(response.content)

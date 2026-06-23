@@ -11,7 +11,7 @@ Important — pourquoi invoke séquentiel et pas graph.batch() :
 Lancer :
     agentic4api-batch                 # tout le golden
     agentic4api-batch --limit 5       # smoke test sur 5 questions
-    agentic4api-batch --worksheet run_gemini25flash
+    agentic4api-batch --worksheet run_gemini35flash
 """
 
 from __future__ import annotations
@@ -23,6 +23,36 @@ from agentic4api.batch.golden import load_golden
 from agentic4api.batch.sheet_writer import write_results
 from agentic4api.config.settings import settings
 from agentic4api.graph.build import build_graph
+from agentic4api.graph.nodes import _parse_apis
+
+
+def _extract_result(state: dict) -> tuple[str, list[str], dict]:
+    """Normalise la sortie du graphe selon le mode (rag ou agentic).
+
+    Retourne (answer_text, final_apis, tokens_dict).
+    En mode agentic (create_react_agent), la sortie est dans state["messages"].
+    """
+    if settings.retrieval_mode == "agentic":
+        messages = state.get("messages", [])
+        text = messages[-1].content if messages else ""
+        if not isinstance(text, str):
+            text = str(text)
+        return text, _parse_apis(text), {"tokens_in": 0, "tokens_out": 0, "tokens_total": 0}
+
+    text = state.get("answer_text", "")
+    return text, state.get("final_apis", []), {
+        "tokens_in":    state.get("tokens_in", 0),
+        "tokens_out":   state.get("tokens_out", 0),
+        "tokens_think": state.get("tokens_think", 0),
+        "tokens_total": state.get("tokens_total", 0),
+    }
+
+
+def _graph_input(question: str) -> dict:
+    """Adapte l'entrée selon le mode."""
+    if settings.retrieval_mode == "agentic":
+        return {"messages": [("human", question)]}
+    return {"question": question}
 
 
 def run(limit: int | None = None, worksheet: str | None = None) -> list[dict]:
@@ -39,22 +69,26 @@ def run(limit: int | None = None, worksheet: str | None = None) -> list[dict]:
         q = item["question"]
 
         t0 = time.perf_counter()  # monotone : robuste aux ajustements d'horloge
-        state = graph.invoke({"question": q})
+        state = graph.invoke(_graph_input(q))
         latency_s = round(time.perf_counter() - t0, 3)
+
+        answer_text, final_apis, tokens = _extract_result(state)
 
         rows.append({
             "id": item.get("id", ""),
             "chatInput": q,
             "question": q,
-            "output": state.get("answer_text", ""),
+            "output": answer_text,
             "retries": state.get("retries", 0),
             "latency_s": latency_s,
-            "tokens_in": state.get("tokens_in", 0),
-            "tokens_out": state.get("tokens_out", 0),
-            "tokens_total": state.get("tokens_total", 0),
+            **tokens,
         })
         print(f"[{i}/{len(golden)}] {item.get('id','')} "
-              f"-> {state.get('final_apis', [])}  ({latency_s}s)")
+              f"-> {final_apis}  ({latency_s}s)")
+
+        # Rate limiting : pause entre chaque question (identique au Wait N8N, configurable via BATCH_WAIT_S)
+        if i < len(golden):
+            time.sleep(settings.batch_wait_s)
 
     write_results(rows, worksheet_name=worksheet)
     print(f"\n[OK] {len(rows)} lignes ecrites dans l'onglet '{worksheet}'.")
@@ -62,9 +96,9 @@ def run(limit: int | None = None, worksheet: str | None = None) -> list[dict]:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Batch d'évaluation → Google Sheet")
-    p.add_argument("--limit", type=int, default=None, help="N premières questions (smoke test)")
-    p.add_argument("--worksheet", type=str, default=None, help="Nom de l'onglet cible (défaut : SHEET_WORKSHEET dans .env)")
+    p = argparse.ArgumentParser(description="Batch d'evaluation -> Google Sheet")
+    p.add_argument("--limit", type=int, default=None, help="N premieres questions (smoke test)")
+    p.add_argument("--worksheet", type=str, default=None, help="Nom de l'onglet cible (defaut : SHEET_WORKSHEET dans .env)")
     args = p.parse_args()
     run(limit=args.limit, worksheet=args.worksheet)
 

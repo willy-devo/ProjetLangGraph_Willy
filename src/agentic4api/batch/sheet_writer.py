@@ -34,7 +34,7 @@ _SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 HEADERS = [
     "id", "chatInput", "question", "output", "retries",
-    "latency_s", "tokens_in", "tokens_out", "tokens_total",
+    "latency_s", "tokens_in", "tokens_out", "tokens_think", "tokens_total",
 ]
 
 

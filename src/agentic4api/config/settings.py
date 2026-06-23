@@ -46,7 +46,10 @@ class Settings(BaseSettings):
     gemini_embed_model: str = "gemini-embedding-001"
 
     # --- Retrieval ---
-    top_k: int = 5
+    top_k: int = 20           # N8N utilisait 20 ; 5 donnait trop peu de candidats à Gemini
+    # "rag"      : retrieve toujours appelé UNE fois avant le LLM (déterministe)
+    # "agentic"  : le LLM décide lui-même quand/combien de fois appeler Pinecone (outil)
+    retrieval_mode: str = "agentic"
 
     # --- Génération ---
     # thinking_budget / thinking_level supprimés : Kong (mode OpenAI-compat) ne les expose pas.
@@ -55,7 +58,10 @@ class Settings(BaseSettings):
     temperature: float = 0.0
 
     # --- Agent ---
-    max_retries: int = 2
+    max_retries: int = 5      # N8N utilisait MAX_RETRY = 5
+
+    # --- Batch ---
+    batch_wait_s: float = 2.0  # pause entre chaque question (rate limiting, identique au Wait N8N)
 
     @property
     def kong_embed_base_url(self) -> str:
