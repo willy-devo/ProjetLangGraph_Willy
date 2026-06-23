@@ -10,8 +10,7 @@ Mode principal : "agentic" (défaut)
 
 Mode optionnel : "rag"
 ──────────────────────
-  START → guard ─┬─(corrompue)→ corrupted_answer → END
-                 └─(ok)────────→ retrieve → answer → END
+  START → retrieve → answer → END
   Pinecone est appelé UNE seule fois avant le LLM (pipeline fixe).
   Avantage : prévisible, debuggable, reproductible, tokens stables.
   Utile pour : comparer les deux architectures sur le golden dataset.
@@ -25,32 +24,20 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from agentic4api.config.settings import settings
-from agentic4api.graph.nodes import answer, corrupted_answer, guard, retrieve
+from agentic4api.graph.nodes import answer, retrieve
 from agentic4api.graph.state import AgentState
 
 
-def _route_after_guard(state: AgentState) -> str:
-    return "corrupted" if state.get("is_corrupted") else "ok"
-
-
 def _build_rag(use_memory: bool = False):
-    """Graphe RAG fixe : retrieve toujours appelé avant le LLM."""
+    """Graphe RAG fixe : START → retrieve → answer → END."""
     g = StateGraph(AgentState)
 
-    g.add_node("guard", guard)
     g.add_node("retrieve", retrieve)
     g.add_node("answer", answer)
-    g.add_node("corrupted_answer", corrupted_answer)
 
-    g.add_edge(START, "guard")
-    g.add_conditional_edges(
-        "guard",
-        _route_after_guard,
-        {"ok": "retrieve", "corrupted": "corrupted_answer"},
-    )
+    g.add_edge(START, "retrieve")
     g.add_edge("retrieve", "answer")
     g.add_edge("answer", END)
-    g.add_edge("corrupted_answer", END)
 
     if not use_memory:
         return g.compile()

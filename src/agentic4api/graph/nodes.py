@@ -33,6 +33,7 @@ from agentic4api.graph.retriever import search
 from agentic4api.graph.state import AgentState
 from agentic4api.graph.transports import AsyncKongChatTransport, KongChatTransport
 
+
 _RECO_RE = re.compile(r"RECOMMAN?DED_APIS\s*:\s*\[([^\]]*)\]", re.IGNORECASE)
 
 
@@ -106,11 +107,6 @@ def search_apis_tool(query: str) -> str:
 
 # ── Nœuds ──────────────────────────────────────────────────────────────────
 
-def guard(state: AgentState) -> dict:
-    q = (state.get("question") or "").strip()
-    return {"is_corrupted": len(q) < 3, "retries": 0}
-
-
 def retrieve(state: AgentState) -> dict:
     candidates = search(state["question"])
     return {
@@ -134,6 +130,3 @@ def answer(state: AgentState) -> dict:
     return out
 
 
-def corrupted_answer(state: AgentState) -> dict:
-    """Réponse de court-circuit pour une question corrompue."""
-    return {"answer_text": "RECOMMANDED_APIS: []", "final_apis": []}

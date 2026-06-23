@@ -81,7 +81,6 @@ def run(limit: int | None = None, worksheet: str | None = None) -> list[dict]:
             "chatInput": q,
             "question": q,
             "output": answer_text,
-            "retries": state.get("retries", 0),
             "latency_s": latency_s,
             **tokens,
         })

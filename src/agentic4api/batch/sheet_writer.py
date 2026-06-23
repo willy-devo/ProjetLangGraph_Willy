@@ -33,7 +33,7 @@ from agentic4api.config.settings import settings
 _SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 HEADERS = [
-    "id", "chatInput", "question", "output", "retries",
+    "id", "chatInput", "question", "output",
     "latency_s", "tokens_in", "tokens_out", "tokens_think", "tokens_total",
 ]
 
