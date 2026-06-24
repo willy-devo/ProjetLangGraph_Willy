@@ -18,27 +18,27 @@ class Settings(BaseSettings):
 
     # --- Routes Kong (remplacent GOOGLE_API_KEY) ---
     # Kong proxifie vers Gemini et expose une API OpenAI-compatible.
-    kong_chat_url: str = ""      # ex. https://host/ai-api/v1/chat/gemini
-    kong_embed_url: str = ""     # ex. https://host/ai-api/v1/embeddings
-    kong_api_key: str = "dummy"  # laisser "dummy" si Kong n'exige pas de clé
+    kong_chat_url: str = ""      # .env — ex. https://host/ai-api/v1/chat/gemini
+    kong_embed_url: str = ""     # .env — ex. https://host/ai-api/v1/embeddings
+    kong_api_key: str = "dummy"  # .env — laisser "dummy" si Kong n'exige pas de clé
     kong_verify_ssl: bool = False  # False sur réseau interne avec certificat auto-signé
 
     # --- Autres secrets ---
-    pinecone_api_key: str = ""
-    pinecone_index: str = "agentic4api"
+    pinecone_api_key: str = ""   # .env
+    pinecone_index: str = "gemb2-apiparsing-raw-v2s"
     # Host direct (optionnel mais recommandé) : évite un appel API de résolution.
     # Visible dans la console Pinecone → ton index → "Host".
     # Ex. https://agentic4api-xxxx.svc.aped-xxxx.pinecone.io
-    pinecone_host: str = ""
-    sheet_id: str = ""
-    sheet_worksheet: str              # nom de l'onglet cible — obligatoire, pas de défaut
+    pinecone_host: str = ""      # .env
+    sheet_id: str = ""           # .env
+    sheet_worksheet: str         # .env — nom de l'onglet cible, obligatoire, pas de défaut
 
     # --- Auth Google Sheets ---
     # "oauth2"          → perso/local : ouvre le navigateur une fois, sauvegarde token.json
     # "service_account" → entreprise  : service_account.json ou JSON brut dans GOOGLE_SA_JSON
     google_auth_mode: str = "oauth2"
     google_credentials_json: str = "./credentials.json"   # OAuth2 : téléchargé depuis GCP Console
-    google_sa_json: str = "./service_account.json"        # Service account : clé privée du robot
+    google_sa_json: str = "./service_account.json"        # .env en mode service_account (Cloud Run)
 
     # --- Modèles ---
     # Utilise le nom exact renvoyé par Kong dans "model" (visible dans la réponse JSON).

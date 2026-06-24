@@ -16,8 +16,10 @@ Deux modes d'authentification selon GOOGLE_AUTH_MODE dans le .env :
     → Le Sheet DOIT être partagé avec l'email du service account
 
 Colonnes écrites :
-  id, chatInput, question, output, retries,
-  latency_s, tokens_in, tokens_out, tokens_total
+  id, question, output, final_apis,
+  latency_s, llm_call_count, tool_call_count, tool_call_inputs,
+  tokens_in, tokens_out, tokens_think, tokens_total,
+  retrieved_slugs, history_summary
 """
 
 from __future__ import annotations
@@ -33,10 +35,9 @@ from agentic4api.config.settings import settings
 _SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 HEADERS = [
-    "id", "chatInput", "question", "output", "final_apis",
-    "latency_s",
+    "id", "question", "output", "final_apis",
+    "latency_s","tokens_in", "tokens_out", "tokens_think","tokens_total",
     "llm_call_count", "tool_call_count", "tool_call_inputs",
-    "tokens_in", "tokens_out", "tokens_think", "tokens_total",
     "retrieved_slugs", "history_summary",
 ]
 

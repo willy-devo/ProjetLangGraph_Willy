@@ -124,7 +124,6 @@ def _run_sequential(golden: list[dict], graph) -> tuple[list[dict], list[dict]]:
         answer_text, final_apis, metrics = _extract_result(state)
         rows.append({
             "id":        item.get("id", ""),
-            "chatInput": q,
             "question":  q,
             "output":    answer_text,
             "latency_s": latency_s,
@@ -156,7 +155,6 @@ def _run_parallel(golden: list[dict], graph, batch_size: int) -> tuple[list[dict
             answer_text, final_apis, metrics = _extract_result(state)
             rows.append({
                 "id":        item.get("id", ""),
-                "chatInput": item["question"],
                 "question":  item["question"],
                 "output":    answer_text,
                 "latency_s": chunk_latency,

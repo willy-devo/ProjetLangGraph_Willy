@@ -2,10 +2,10 @@
 Tests du graphe.
 
 Deux niveaux, tous SANS réseau :
-  1. Parsing & routing (purement local) : _parse_apis, guard.
-  2. Smoke test d'invocation : graph.invoke() de bout en bout, avec le retriever
-     Pinecone et le LLM Gemini MOCKÉS (monkeypatch). Vérifie que le câblage des
-     nœuds, l'accumulation des tokens et le format de sortie tiennent ensemble.
+  1. Parsing (purement local) : _parse_apis.
+  2. Smoke test d'invocation : graph.invoke() de bout en bout en mode agentic,
+     avec _llm_with_tools et search MOCKÉS. Vérifie le câblage des nœuds,
+     l'accumulation des tokens et le format de sortie.
 
 Pour un vrai test d'intégration (vrai Gemini + vrai Pinecone), lance plutôt :
     agentic4api-batch --limit 2
@@ -15,17 +15,17 @@ from __future__ import annotations
 
 import pytest
 
-from agentic4api.graph.nodes import _parse_apis, guard
+from agentic4api.graph.nodes import _parse_apis
 
 
-# ── 1. Parsing & routing (sans dépendances) ─────────────────────────────────
+# ── 1. Parsing (sans dépendances) ───────────────────────────────────────────
 
 def test_parse_apis_basic():
     assert _parse_apis("RECOMMANDED_APIS: [order-api-v4]") == ["order-api-v4"]
 
 
 def test_parse_apis_multi():
-    assert _parse_apis("bla\nRECOMMANDED_APIS: [auth-api, mfa-api]") == ["auth-api", "mfa-api"]
+    assert _parse_apis("bla\nRECOMMENDED_APIS: [auth-api, mfa-api]") == ["auth-api", "mfa-api"]
 
 
 def test_parse_apis_empty():
@@ -33,7 +33,6 @@ def test_parse_apis_empty():
 
 
 def test_parse_apis_single_m_tolerated():
-    # la regex tolère 1 ou 2 M : RECOMMANDED / RECOMMANDED
     assert _parse_apis("RECOMMANDED_APIS: [foo-bar-api]") == ["foo-bar-api"]
 
 
@@ -41,70 +40,44 @@ def test_parse_apis_strips_quotes_and_stars():
     assert _parse_apis('RECOMMANDED_APIS: [`foo-bar-api`, "baz-api"]') == ["foo-bar-api", "baz-api"]
 
 
-def test_guard_flags_empty():
-    assert guard({"question": ""})["is_corrupted"] is True
-
-
-def test_guard_passes_normal():
-    out = guard({"question": "créer une commande"})
-    assert out["is_corrupted"] is False
-    assert out["retries"] == 0
-
-
-# ── 2. Smoke test : invocation complète du graphe, mocks sans réseau ─────────
+# ── 2. Smoke test : invocation complète du graphe, mocks sans réseau ────────
 
 class _FakeLLMResponse:
-    """Imite la réponse d'un ChatGoogleGenerativeAI (content + usage_metadata)."""
+    """Imite la réponse d'un ChatOpenAI en mode agentic (contenu + tokens, pas de tool_call)."""
     def __init__(self, content: str):
         self.content = content
+        self.tool_calls = []  # liste vide → réponse finale, pas d'appel outil
         self.usage_metadata = {
             "input_tokens": 120,
             "output_tokens": 30,
             "total_tokens": 150,
-            "output_token_details": {"reasoning": 12},
         }
 
 
-class _FakeLLM:
-    def __init__(self, content: str):
-        self._content = content
-
+class _FakeBoundLLM:
     def invoke(self, messages):
-        return _FakeLLMResponse(self._content)
+        return _FakeLLMResponse("Voici l'API.\nRECOMMENDED_APIS: [order-api-v4]")
 
 
 @pytest.fixture
 def patched_graph(monkeypatch, mock_candidates):
     """
-    Construit un graphe dont le retrieve et le answer sont mockés :
-      - retriever.search → renvoie mock_candidates (pas de Pinecone)
-      - nodes._llm()     → renvoie un faux LLM (pas de Gemini)
+    Graphe agentic dont _llm_with_tools et search sont mockés :
+      - _llm_with_tools → retourne directement une réponse finale (pas de tool call)
+      - search          → retourne mock_candidates (pas de Pinecone)
     """
     import agentic4api.graph.nodes as nodes
 
+    monkeypatch.setattr(nodes, "_llm_with_tools", lambda: _FakeBoundLLM())
     monkeypatch.setattr(nodes, "search", lambda q, top_k=None: mock_candidates)
-    monkeypatch.setattr(
-        nodes, "_llm",
-        lambda: _FakeLLM("Voici l'API.\nRECOMMANDED_APIS: [order-api-v4]"),
-    )
 
     from agentic4api.graph.build import build_graph
     return build_graph(use_memory=False)
 
 
 def test_graph_invoke_normal_question(patched_graph):
-    state = patched_graph.invoke({"question": "je veux créer une commande client"})
-    # le format de sortie est correctement parsé
+    state = patched_graph.invoke({"messages": [("human", "je veux créer une commande client")]})
     assert state["final_apis"] == ["order-api-v4"]
-    # les candidats et scores ont bien transité par le State
-    assert state["scores"] == [0.91, 0.62]
-    # les tokens ont été capturés et accumulés
     assert state["tokens_in"] == 120
     assert state["tokens_total"] == 150
-
-
-def test_graph_invoke_corrupted_question_short_circuits(patched_graph):
-    state = patched_graph.invoke({"question": ""})
-    # question vide → court-circuit, pas d'appel LLM, liste vide
-    assert state["final_apis"] == []
-    assert state.get("is_corrupted") is True
+    assert state["llm_call_count"] == 1
