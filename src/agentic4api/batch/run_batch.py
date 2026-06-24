@@ -22,6 +22,7 @@ Exemples :
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from math import ceil
 
@@ -29,26 +30,23 @@ from agentic4api.batch.golden import load_golden
 from agentic4api.batch.sheet_writer import write_results
 from agentic4api.config.settings import settings
 from agentic4api.graph.build import build_graph
-from agentic4api.graph.nodes import _parse_apis
 
 
 def _extract_result(state: dict) -> tuple[str, list[str], dict]:
-    """Normalise la sortie selon le mode (agentic par défaut, rag optionnel)."""
-    if settings.retrieval_mode == "rag":
-        text = state.get("answer_text", "")
-        return text, state.get("final_apis", []), {
-            "tokens_in":    state.get("tokens_in", 0),
-            "tokens_out":   state.get("tokens_out", 0),
-            "tokens_think": state.get("tokens_think", 0),
-            "tokens_total": state.get("tokens_total", 0),
-        }
-
-    # Mode agentic — create_react_agent retourne les messages
-    messages = state.get("messages", [])
-    text = messages[-1].content if messages else ""
-    if not isinstance(text, str):
-        text = str(text)
-    return text, _parse_apis(text), {"tokens_in": 0, "tokens_out": 0, "tokens_think": 0, "tokens_total": 0}
+    """Extrait tous les champs mesurables depuis AgentState."""
+    text = state.get("answer_text", "")
+    return text, state.get("final_apis", []), {
+        "tokens_in":       state.get("tokens_in", 0),
+        "tokens_out":      state.get("tokens_out", 0),
+        "tokens_think":    state.get("tokens_think", 0),
+        "tokens_total":    state.get("tokens_total", 0),
+        "llm_call_count":  state.get("llm_call_count", 0),
+        "tool_call_count": state.get("tool_call_count", 0),
+        # Listes sérialisées en JSON pour tenir dans une cellule Sheet
+        "final_apis":       json.dumps(state.get("final_apis", []),        ensure_ascii=False),
+        "tool_call_inputs": json.dumps(state.get("tool_call_inputs", []), ensure_ascii=False),
+        "retrieved_slugs":  json.dumps(state.get("retrieved_slugs", {}),  ensure_ascii=False),
+    }
 
 
 def _graph_input(question: str) -> dict:

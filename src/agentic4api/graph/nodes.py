@@ -1,18 +1,10 @@
 """
-Les nœuds du graphe (mode RAG optionnel).
+Nœuds du graphe — partagés entre les deux modes.
 
-- retrieve : appelle Pinecone, stocke candidats + scores dans le State.
-- answer   : Gemini décide/formate `RECOMMANDED_APIS: [...]`, et on CAPTURE les tokens.
+Mode agentic  : agent_node → tools_node* → agent_node → END
+Mode RAG      : retrieve → answer → END
 
-Pourquoi un transport httpx custom :
-  Kong expose le chat sur /ai-api/v1/chat/gemini, pas sur /chat/completions (standard
-  OpenAI). ChatOpenAI ajoute toujours /chat/completions à la base URL — on ne peut pas
-  l'en empêcher. Le transport redirige silencieusement la requête vers l'URL Kong exacte,
-  sans changer le reste de la chaîne LangChain (streaming, usage_metadata, etc.).
-
-Sur la capture des tokens (OpenAI-compat, validé sur réponse Kong) :
-  LangChain normalise prompt_tokens/completion_tokens → input_tokens/output_tokens dans
-  usage_metadata. On utilise donc les mêmes clés qu'avec l'API Google native.
+tools_node est un nœud custom (pas ToolNode) pour capturer retrieved_slugs dans le State.
 """
 
 from __future__ import annotations
@@ -21,14 +13,15 @@ import re
 from functools import lru_cache
 
 import httpx
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
+from langgraph.graph import END
 
 from agentic4api.config.settings import settings
 from agentic4api.graph.prompts import SYSTEM_PROMPT
 from agentic4api.graph.retriever import search
 from agentic4api.graph.state import AgentState
-from agentic4api.graph.tools import _format_candidate
+from agentic4api.graph.tools import _format_candidate, search_apis_tool
 from agentic4api.graph.transports import AsyncKongChatTransport, KongChatTransport
 
 
@@ -37,10 +30,9 @@ _RECO_RE = re.compile(r"RECOMMAN?DED_APIS\s*:\s*\[([^\]]*)\]", re.IGNORECASE)
 
 @lru_cache(maxsize=1)
 def _llm() -> ChatOpenAI:
-    """Construit le client ChatOpenAI câblé sur la route Kong."""
     verify = settings.kong_verify_ssl
     return ChatOpenAI(
-        base_url="http://kong-placeholder/v1",  # ignoré par le transport
+        base_url="http://kong-placeholder/v1",
         api_key=settings.kong_api_key,
         model=settings.gemini_model,
         temperature=settings.temperature,
@@ -54,11 +46,12 @@ def _llm() -> ChatOpenAI:
     )
 
 
-def _usage_delta(response) -> dict:
-    """Extrait les tokens d'UNE réponse pour accumulation dans le State.
+@lru_cache(maxsize=1)
+def _llm_with_tools():
+    return _llm().bind_tools([search_apis_tool])
 
-    LangChain normalise prompt_tokens/completion_tokens → input_tokens/output_tokens.
-    """
+
+def _usage_delta(response) -> dict:
     u = getattr(response, "usage_metadata", None) or {}
     t_in    = u.get("input_tokens", 0)
     t_out   = u.get("output_tokens", 0)
@@ -66,13 +59,12 @@ def _usage_delta(response) -> dict:
     return {
         "tokens_in":    t_in,
         "tokens_out":   t_out,
-        "tokens_think": max(0, t_total - t_in - t_out),  # raisonnement interne Gemini
+        "tokens_think": max(0, t_total - t_in - t_out),
         "tokens_total": t_total,
     }
 
 
 def _parse_apis(text: str) -> list[str]:
-    """Extrait les slugs de la ligne RECOMMANDED_APIS: [...]."""
     m = _RECO_RE.search(text or "")
     if not m:
         return []
@@ -82,28 +74,95 @@ def _parse_apis(text: str) -> list[str]:
     return [s.strip().strip("`*\"' ") for s in inner.split(",") if s.strip()]
 
 
-# ── Nœuds ──────────────────────────────────────────────────────────────────
+# ── Nœuds mode agentic ─────────────────────────────────────────────────────
+
+def agent_node(state: AgentState) -> dict:
+    """Nœud LLM : raisonne, décide d'appeler un outil ou de répondre."""
+    messages = list(state.get("messages") or [])
+    if not messages or not isinstance(messages[0], SystemMessage):
+        messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
+
+    response = _llm_with_tools().invoke(messages)
+    out = {
+        "messages":      [response],
+        "llm_call_count": 1,
+        **_usage_delta(response),
+    }
+
+    if hasattr(response, "tool_calls") and response.tool_calls:
+        # Enregistre les queries qui vont être envoyées à Pinecone
+        queries = [
+            tc["args"].get("query", "")
+            for tc in response.tool_calls
+            if tc["name"] == "search_apis_tool"
+        ]
+        out["tool_call_inputs"] = queries
+        out["tool_call_count"]  = len(queries)
+    else:
+        # Réponse finale
+        text = response.content if isinstance(response.content, str) else str(response.content)
+        out["answer_text"] = text
+        out["final_apis"]  = _parse_apis(text)
+
+    return out
+
+
+def tools_node(state: AgentState) -> dict:
+    """Nœud outil custom : exécute search_apis_tool et trace retrieved_slugs."""
+    messages = state.get("messages", [])
+    last_ai  = messages[-1]
+
+    tool_messages   = []
+    retrieved_slugs = {}
+
+    for tc in (getattr(last_ai, "tool_calls", None) or []):
+        if tc["name"] != "search_apis_tool":
+            continue
+        query   = tc["args"].get("query", "")
+        results = search(query, top_k=settings.top_k)
+
+        for r in results:
+            slug = r.get("slug", "")
+            if slug:
+                retrieved_slugs[slug] = retrieved_slugs.get(slug, 0) + 1
+
+        content = "\n".join(_format_candidate(r) for r in results) if results else "Aucun résultat trouvé."
+        tool_messages.append(ToolMessage(content=content, tool_call_id=tc["id"]))
+
+    return {
+        "messages":       tool_messages,
+        "retrieved_slugs": retrieved_slugs,
+    }
+
+
+def should_continue(state: AgentState) -> str:
+    messages = state.get("messages") or []
+    last = messages[-1]
+    if hasattr(last, "tool_calls") and last.tool_calls:
+        return "tools"
+    return END
+
+
+# ── Nœuds mode RAG ─────────────────────────────────────────────────────────
 
 def retrieve(state: AgentState) -> dict:
     candidates = search(state["question"])
     return {
         "candidates": candidates,
-        "scores": [c["score"] for c in candidates],
+        "scores":     [c["score"] for c in candidates],
     }
 
 
 def answer(state: AgentState) -> dict:
     candidates = state.get("candidates", [])
-    context = "\n".join(_format_candidate(c) for c in candidates)
-    messages = [
+    context    = "\n".join(_format_candidate(c) for c in candidates)
+    messages   = [
         SystemMessage(content=SYSTEM_PROMPT),
         HumanMessage(content=f"Demande : {state['question']}\n\nCandidats Pinecone :\n{context}"),
     ]
     response = _llm().invoke(messages)
     text = response.content if isinstance(response.content, str) else str(response.content)
 
-    out = {"answer_text": text, "final_apis": _parse_apis(text)}
+    out = {"answer_text": text, "final_apis": _parse_apis(text), "llm_call_count": 1}
     out.update(_usage_delta(response))
     return out
-
-
