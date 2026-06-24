@@ -1,5 +1,10 @@
 """
-Écriture des résultats dans le Google Sheet — UN seul write batch.
+Écriture des résultats dans le Google Sheet.
+
+Deux modes :
+  write_results()     — écrit toutes les lignes en un seul appel (batch final)
+  init_sheet()        — crée/vide l'onglet, écrit les headers, retourne le Worksheet
+  append_row()        — ajoute UNE ligne en temps réel (appel après chaque question)
 
 Deux modes d'authentification selon GOOGLE_AUTH_MODE dans le .env :
 
@@ -35,7 +40,7 @@ from agentic4api.config.settings import settings
 _SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 HEADERS = [
-    "id", "question", "output", "final_apis",
+    "id", "question", "output", "final_apis", "expected_apis",
     "latency_s","tokens_in", "tokens_out", "tokens_think","tokens_total",
     "llm_call_count", "tool_call_count", "tool_call_inputs",
     "retrieved_slugs", "history_summary",
@@ -69,11 +74,40 @@ def _client() -> gspread.Client:
     )
 
 
+def init_sheet(worksheet_name: str, rows_estimate: int = 500) -> gspread.Worksheet:
+    """Crée ou vide l'onglet, écrit les headers. Retourne le Worksheet pour les appends suivants."""
+    gc = _client()
+    sh = gc.open_by_key(settings.sheet_id)
+
+    try:
+        ws = sh.worksheet(worksheet_name)
+        ws.clear()
+    except gspread.WorksheetNotFound:
+        ws = sh.add_worksheet(title=worksheet_name, rows=rows_estimate + 10, cols=len(HEADERS))
+
+    ws.update([HEADERS], value_input_option="RAW")
+    return ws
+
+
+def get_worksheet(worksheet_name: str) -> gspread.Worksheet:
+    """Récupère le worksheet sans le vider — pour reprise après crash."""
+    gc = _client()
+    sh = gc.open_by_key(settings.sheet_id)
+    try:
+        return sh.worksheet(worksheet_name)
+    except gspread.WorksheetNotFound:
+        ws = sh.add_worksheet(title=worksheet_name, rows=510, cols=len(HEADERS))
+        ws.update([HEADERS], value_input_option="RAW")
+        return ws
+
+
+def append_row(ws: gspread.Worksheet, row: dict) -> None:
+    """Ajoute une ligne en temps réel — un appel réseau par question."""
+    ws.append_row([row.get(h, "") for h in HEADERS], value_input_option="RAW")
+
+
 def write_results(rows: list[dict], worksheet_name: str = "results") -> None:
-    """
-    `rows` : liste de dicts ayant (au moins) les clés de HEADERS.
-    Crée l'onglet s'il n'existe pas, puis écrit headers + données en UN seul update.
-    """
+    """Écrit toutes les lignes en un seul appel batch (mode non-temps-réel)."""
     gc = _client()
     sh = gc.open_by_key(settings.sheet_id)
 
@@ -87,5 +121,4 @@ def write_results(rows: list[dict], worksheet_name: str = "results") -> None:
     for r in rows:
         matrix.append([r.get(h, "") for h in HEADERS])
 
-    # Un seul appel réseau → pas de rate-limit.
     ws.update(matrix, value_input_option="RAW")

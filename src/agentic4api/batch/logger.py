@@ -36,3 +36,9 @@ def write_jsonl(rows: list[dict], path: Path) -> None:
     with open(path, "w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
+
+
+def append_jsonl(row: dict, path: Path) -> None:
+    """Ajoute une ligne au fichier JSONL existant (mode append)."""
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")

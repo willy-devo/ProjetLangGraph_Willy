@@ -14,6 +14,7 @@ Pour un vrai test d'intégration (vrai Gemini + vrai Pinecone), lance plutôt :
 from __future__ import annotations
 
 import pytest
+from langchain_core.messages import AIMessage
 
 from agentic4api.graph.nodes import _parse_apis
 
@@ -42,33 +43,25 @@ def test_parse_apis_strips_quotes_and_stars():
 
 # ── 2. Smoke test : invocation complète du graphe, mocks sans réseau ────────
 
-class _FakeLLMResponse:
-    """Imite la réponse d'un ChatOpenAI en mode agentic (contenu + tokens, pas de tool_call)."""
-    def __init__(self, content: str):
-        self.content = content
-        self.tool_calls = []  # liste vide → réponse finale, pas d'appel outil
-        self.usage_metadata = {
-            "input_tokens": 120,
-            "output_tokens": 30,
-            "total_tokens": 150,
-        }
-
-
-class _FakeBoundLLM:
+class _FakeLLM:
     def invoke(self, messages):
-        return _FakeLLMResponse("Voici l'API.\nRECOMMENDED_APIS: [order-api-v4]")
+        # Retourne directement une réponse finale (pas de SEARCH:)
+        return AIMessage(
+            content="Voici l'API.\nRECOMMENDED_APIS: [order-api-v4]",
+            usage_metadata={"input_tokens": 120, "output_tokens": 30, "total_tokens": 150},
+        )
 
 
 @pytest.fixture
 def patched_graph(monkeypatch, mock_candidates):
     """
-    Graphe agentic dont _llm_with_tools et search sont mockés :
-      - _llm_with_tools → retourne directement une réponse finale (pas de tool call)
-      - search          → retourne mock_candidates (pas de Pinecone)
+    Graphe agentic dont _llm et search sont mockés :
+      - _llm    → retourne directement une réponse finale (pas de SEARCH:)
+      - search  → retourne mock_candidates (pas de Pinecone)
     """
     import agentic4api.graph.nodes as nodes
 
-    monkeypatch.setattr(nodes, "_llm_with_tools", lambda: _FakeBoundLLM())
+    monkeypatch.setattr(nodes, "_llm", lambda: _FakeLLM())
     monkeypatch.setattr(nodes, "search", lambda q, top_k=None: mock_candidates)
 
     from agentic4api.graph.build import build_graph

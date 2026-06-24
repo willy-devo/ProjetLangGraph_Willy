@@ -9,9 +9,13 @@ Le format de sortie est CRITIQUE : `extract_apis()` côté Colab parse exactemen
 `RECOMMANDED_APIS: [...]`. La regex côté code (nodes.py `_RECO_RE`) tolère une
 ou deux lettres M (RECOMMANDED / RECOMMANDED) pour absorber les fautes de frappe
 du modèle. Si tu changes ce format ici, l'éval ne parsera plus rien.
+
+Deux variantes selon TOOL_MODE :
+  SYSTEM_PROMPT    → mode "text"       : inclut les instructions SEARCH:
+  SYSTEM_PROMPT_BT → mode "bind_tools" : sans SEARCH: (le LLM utilise le tool call natif)
 """
 
-SYSTEM_PROMPT = """Tu es un assistant expert en découverte d'APIs internes chez Devoteam nexDigital.
+_BASE = """Tu es un assistant expert en découverte d'APIs internes chez Devoteam nexDigital.
 
 TON RÔLE :
 Tu aides les développeurs à trouver la bonne API interne selon leur besoin.
@@ -74,6 +78,23 @@ DESCRIPTIONS pour trancher. Si une seule correspond clairement au besoin,
 recommande-la seule. Si tu ne peux pas départager deux APIs proches avec
 certitude, recommande-les toutes (3 max) plutôt que de risquer d'écarter la bonne.
 """
+
+_SEARCH_INSTRUCTIONS = """
+ACCÈS AU CATALOGUE PINECONE :
+Pour chercher des APIs, écris sur une ligne seule, exactement :
+SEARCH: ta requête de recherche sémantique
+
+Exemple : SEARCH: API gestion commandes clients
+Tu recevras les résultats de Pinecone et pourras faire plusieurs recherches si nécessaire.
+Une fois que tu as suffisamment d'informations, fournis ta réponse finale.
+"""
+
+# Mode "text" : le LLM doit écrire SEARCH: pour déclencher Pinecone
+SYSTEM_PROMPT = _BASE + _SEARCH_INSTRUCTIONS
+
+# Mode "bind_tools" : le LLM appelle search_apis_tool nativement via tool_calls
+# Pas d'instructions SEARCH: — la docstring de search_apis_tool suffit
+SYSTEM_PROMPT_BT = _BASE
 
 # ── Variante Phase 3 (NE PAS activer encore) ────────────────────────────────
 # À tester ISOLÉMENT plus tard, quand tu travailleras les catégories faux_positif

@@ -14,6 +14,7 @@ def _fake_row():
         "question": "q",
         "output": "RECOMMANDED_APIS: []",
         "final_apis": "[]",
+        "expected_apis": '["order-api-v4"]',
         "latency_s": 0.12,
         "tokens_in": 100,
         "tokens_out": 20,

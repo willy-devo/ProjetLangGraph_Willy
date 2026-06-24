@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     # --- Agent ---
     max_retries: int = 5      # N8N utilisait MAX_RETRY = 5
 
+    # --- Agent : mode d'appel d'outil ---
+    # "text"       : le LLM écrit "SEARCH: <requête>" dans son texte (compatible Kong/thought_signature)
+    # "bind_tools" : OpenAI structured tool calls — nécessite que Kong transmette la thought_signature
+    tool_mode: str = "text"
+
     # --- Batch ---
     batch_wait_s: float = 2.0  # pause entre chaque question (rate limiting, identique au Wait N8N)
 
