@@ -43,17 +43,10 @@ class AgentState(TypedDict, total=False):
     answer_text: str         # texte brut complet (contient "RECOMMANDED_APIS: [...]")
 
     # --- Observabilité / debug ---
-    retrieved_slugs: Annotated[dict[str, int], _merge_slug_counts]
-    # slug → nb de fois retrievé (un même slug peut revenir sur plusieurs tool calls)
-
-    tool_call_inputs: Annotated[list[str], operator.add]
-    # queries envoyées à Pinecone dans l'ordre (une par tool call)
-
-    tool_call_count: Annotated[int, operator.add]
-    # nb d'appels à search_apis_tool (= nb de fois que Pinecone a été interrogé)
-
-    llm_call_count: Annotated[int, operator.add]
-    # nb d'appels LLM de raisonnement (toujours >= tool_call_count)
+    retrieved_slugs: Annotated[dict[str, int], _merge_slug_counts] # slug → nb de fois retrievé (un même slug peut revenir sur plusieurs tool calls)
+    tool_call_inputs: Annotated[list[str], operator.add] # queries envoyées à Pinecone dans l'ordre (une par tool call)
+    tool_call_count: Annotated[int, operator.add] # nb d'appels à search_apis_tool
+    llm_call_count: Annotated[int, operator.add] # nb d'appels LLM de raisonnement
 
     # --- Tokens (operator.add = accumulation sur le ReAct loop) ---
     tokens_in: Annotated[int, operator.add]

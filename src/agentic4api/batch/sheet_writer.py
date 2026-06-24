@@ -37,7 +37,7 @@ HEADERS = [
     "latency_s",
     "llm_call_count", "tool_call_count", "tool_call_inputs",
     "tokens_in", "tokens_out", "tokens_think", "tokens_total",
-    "retrieved_slugs",
+    "retrieved_slugs", "history_summary",
 ]
 
 
