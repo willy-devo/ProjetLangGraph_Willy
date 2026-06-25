@@ -57,11 +57,17 @@ def _usage_delta(response) -> dict:
     t_in    = u.get("input_tokens", 0)
     t_out   = u.get("output_tokens", 0)
     t_total = u.get("total_tokens", 0)
+    t_think = max(0, t_total - t_in - t_out)
     return {
         "tokens_in":    t_in,
         "tokens_out":   t_out,
-        "tokens_think": max(0, t_total - t_in - t_out),
+        "tokens_think": t_think,
         "tokens_total": t_total,
+        "tokens_detail": {
+            "tokens_in":    [t_in],
+            "tokens_out":   [t_out],
+            "tokens_think": [t_think],
+        },
     }
 
 

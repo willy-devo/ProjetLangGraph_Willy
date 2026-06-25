@@ -1,8 +1,9 @@
 """
 Logger JSONL pour les runs batch.
 
-Écrit un fichier logs/resultats_YYYY_MM_DD_HHhMM.jsonl où chaque ligne
-est une question complète avec son historique de messages sérialisé.
+Deux fichiers par run, dans logs/ :
+  resultats_YYYY_MM_DD_HHhMM.jsonl  — une ligne par question reussie
+  errors_YYYY_MM_DD_HHhMM.jsonl     — une ligne par erreur (429, crash, etc.)
 """
 
 from __future__ import annotations
@@ -19,6 +20,43 @@ def log_path() -> Path:
     path = Path("logs")
     path.mkdir(exist_ok=True)
     return path / name
+
+
+def error_log_path() -> Path:
+    """logs/errors_2026_06_24_14h30.jsonl — meme horodatage que log_path()."""
+    now  = datetime.now()
+    name = now.strftime("errors_%Y_%m_%d_%Hh%M.jsonl")
+    path = Path("logs")
+    path.mkdir(exist_ok=True)
+    return path / name
+
+
+def append_error_jsonl(
+    error_path: Path,
+    *,
+    question_id: str,
+    question: str,
+    attempt: int,
+    backoff_s: int,
+    error_type: str,
+    error_message: str,
+    fatal: bool,
+    total_wait_s: int = 0,
+) -> None:
+    """Ajoute une ligne d'erreur au fichier errors_*.jsonl."""
+    row = {
+        "timestamp":    datetime.now().isoformat(timespec="seconds"),
+        "question_id":  question_id,
+        "question":     question,
+        "attempt":      attempt,
+        "backoff_s":    backoff_s,
+        "error_type":   error_type,
+        "error_message": error_message,
+        "fatal":        fatal,
+        "total_wait_s": total_wait_s,
+    }
+    with open(error_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
 
 
 def serialize_messages(messages: list) -> list[dict]:

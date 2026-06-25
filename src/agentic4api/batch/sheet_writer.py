@@ -41,7 +41,7 @@ _SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 HEADERS = [
     "id", "question", "output", "final_apis", "expected_apis",
-    "latency_s","tokens_in", "tokens_out", "tokens_think","tokens_total",
+    "latency_s", "tokens_in", "tokens_out", "tokens_think", "tokens_total", "tokens_detail",
     "llm_call_count", "tool_call_count", "tool_call_inputs",
     "retrieved_slugs", "history_summary",
 ]

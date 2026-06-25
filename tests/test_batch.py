@@ -20,6 +20,7 @@ def _fake_row():
         "tokens_out": 20,
         "tokens_think": 15,
         "tokens_total": 120,
+        "tokens_detail": '{"tokens_in": [100], "tokens_out": [20], "tokens_think": [15]}',
         "llm_call_count": 1,
         "tool_call_count": 2,
         "tool_call_inputs": "[]",

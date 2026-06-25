@@ -19,12 +19,29 @@ from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
 
+
+
 def _merge_slug_counts(a: dict | None, b: dict | None) -> dict:
     """Reducer : fusionne deux dicts slug→count en additionnant les comptes."""
     merged = dict(a or {})
     for slug, count in (b or {}).items():
         merged[slug] = merged.get(slug, 0) + count
     return merged
+
+
+def _merge_tokens_detail(a: dict | None, b: dict | None) -> dict:
+    """Reducer : concatène les listes de tokens par appel LLM.
+    Ex: {"tokens_in": [895]} + {"tokens_in": [3139]} → {"tokens_in": [895, 3139]}
+    """
+    if not a:
+        return dict(b) if b else {}
+    if not b:
+        return dict(a)
+    return {
+        "tokens_in":    a.get("tokens_in", [])    + b.get("tokens_in", []),
+        "tokens_out":   a.get("tokens_out", [])   + b.get("tokens_out", []),
+        "tokens_think": a.get("tokens_think", []) + b.get("tokens_think", []),
+    }
 
 
 class AgentState(TypedDict, total=False):
@@ -53,3 +70,5 @@ class AgentState(TypedDict, total=False):
     tokens_out: Annotated[int, operator.add]
     tokens_think: Annotated[int, operator.add]
     tokens_total: Annotated[int, operator.add]
+    # Detail par appel LLM : {"tokens_in": [895, 3139], "tokens_out": [...], "tokens_think": [...]}
+    tokens_detail: Annotated[dict, _merge_tokens_detail]
