@@ -23,7 +23,7 @@ Deux modes d'authentification selon GOOGLE_AUTH_MODE dans le .env :
 Colonnes écrites :
   id, question, output, final_apis, expected_apis,
   latency_s, tokens_in, tokens_out, tokens_think, tokens_total, tokens_detail,
-  llm_call_count, tool_call_count, tool_call_inputs,
+  llm_call_count, tool_call_count, tool_call_inputs, nb_embedded_tokens,
   retrieved_slugs, history_summary
 """
 
@@ -42,7 +42,7 @@ _SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 HEADERS = [
     "id", "question", "output", "final_apis", "expected_apis",
     "latency_s", "tokens_in", "tokens_out", "tokens_think", "tokens_total", "tokens_detail",
-    "llm_call_count", "tool_call_count", "tool_call_inputs",
+    "llm_call_count", "tool_call_count", "tool_call_inputs", "nb_embedded_tokens",
     "retrieved_slugs", "history_summary",
 ]
 

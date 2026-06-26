@@ -24,6 +24,7 @@ def _fake_row():
         "llm_call_count": 1,
         "tool_call_count": 2,
         "tool_call_inputs": "[]",
+        "nb_embedded_tokens": 0,
         "retrieved_slugs": "{}",
         "history_summary": "",
     }

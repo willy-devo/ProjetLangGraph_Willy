@@ -88,6 +88,10 @@ def _detect_resume() -> tuple[int, list[Path]]:
     return len(seen_ids), jsonl_files
 
 
+def _approx_tokens(text: str) -> int:
+    return max(1, len(text) // 4)
+
+
 def _history_summary(messages: list) -> str:
     """_HISTORY_TRUNCATE_WORDS premiers mots par message, un par ligne."""
     lines = []
@@ -130,6 +134,7 @@ def _extract_result(state: dict) -> tuple[str, list[str], dict]:
         "history_summary":  _history_summary(state.get("messages", [])),
         "final_apis":       json.dumps(state.get("final_apis", []),       ensure_ascii=False),
         "tool_call_inputs": json.dumps(state.get("tool_call_inputs", []), ensure_ascii=False),
+        "nb_embedded_tokens": sum(_approx_tokens(q) for q in state.get("tool_call_inputs", [])),
         "retrieved_slugs":  json.dumps(state.get("retrieved_slugs", {}),  ensure_ascii=False),
     }
 
