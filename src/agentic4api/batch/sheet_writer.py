@@ -21,9 +21,9 @@ Deux modes d'authentification selon GOOGLE_AUTH_MODE dans le .env :
     → Le Sheet DOIT être partagé avec l'email du service account
 
 Colonnes écrites :
-  id, question, output, final_apis,
-  latency_s, llm_call_count, tool_call_count, tool_call_inputs,
-  tokens_in, tokens_out, tokens_think, tokens_total,
+  id, question, output, final_apis, expected_apis,
+  latency_s, tokens_in, tokens_out, tokens_think, tokens_total, tokens_detail,
+  llm_call_count, tool_call_count, tool_call_inputs,
   retrieved_slugs, history_summary
 """
 

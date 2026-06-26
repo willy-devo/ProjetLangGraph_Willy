@@ -2,12 +2,13 @@
 Le State unique partagé par les deux modes (agentic et RAG).
 
 Reducers :
-  messages        → add_messages      : append (historique du ReAct loop)
-  tokens_*        → operator.add      : accumule sur chaque appel LLM
-  tool_call_inputs→ operator.add      : accumule les queries Pinecone successives
-  tool_call_count → operator.add      : compte les appels Pinecone
-  llm_call_count  → operator.add      : compte les appels LLM de raisonnement
-  retrieved_slugs → _merge_slug_counts: fusionne les dicts slug→count
+  messages        → add_messages         : append (historique du ReAct loop)
+  tokens_*        → operator.add         : accumule sur chaque appel LLM
+  tokens_detail   → _merge_tokens_detail : concatène les listes par appel LLM
+  tool_call_inputs→ operator.add         : accumule les queries Pinecone successives
+  tool_call_count → operator.add         : compte les appels Pinecone
+  llm_call_count  → operator.add         : compte les appels LLM de raisonnement
+  retrieved_slugs → _merge_slug_counts   : fusionne les dicts slug→count
 """
 
 from __future__ import annotations
@@ -17,7 +18,6 @@ from typing import Annotated, TypedDict
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
-
 
 
 

@@ -89,7 +89,7 @@ def _detect_resume() -> tuple[int, list[Path]]:
 
 
 def _history_summary(messages: list) -> str:
-    """10 premiers mots par message, un par ligne."""
+    """_HISTORY_TRUNCATE_WORDS premiers mots par message, un par ligne."""
     lines = []
     for msg in messages or []:
         mtype = type(msg).__name__
@@ -178,12 +178,9 @@ def _invoke_with_retry(
             total_wait += backoff
         try:
             t0 = time.perf_counter()
-            print("try1")
             state = graph.invoke(inp)
-            print("try2")
             return state, round(time.perf_counter() - t0, 3)
         except openai.RateLimitError as e:
-            print(e)
             fatal = attempt > len(_RATE_LIMIT_BACKOFFS)
             append_error_jsonl(
                 error_path,

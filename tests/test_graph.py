@@ -74,3 +74,4 @@ def test_graph_invoke_normal_question(patched_graph):
     assert state["tokens_in"] == 120
     assert state["tokens_total"] == 150
     assert state["llm_call_count"] == 1
+    assert state["tokens_detail"] == {"tokens_in": [120], "tokens_out": [30], "tokens_think": [0]}
