@@ -44,10 +44,12 @@ def _llm() -> ChatOpenAI:
         temperature=settings.temperature,
         max_tokens=settings.max_output_tokens,
         http_client=httpx.Client(
-            transport=KongChatTransport(settings.kong_chat_url, verify=verify)
+            transport=KongChatTransport(settings.kong_chat_url, verify=verify),
+            timeout=40.0,
         ),
         async_client=httpx.AsyncClient(
-            transport=AsyncKongChatTransport(settings.kong_chat_url, verify=verify)
+            transport=AsyncKongChatTransport(settings.kong_chat_url, verify=verify),
+            timeout=40.0,
         ),
     )
 
@@ -81,15 +83,47 @@ def _parse_apis(text: str) -> list[str]:
     return [s.strip().strip("`*\"' ") for s in inner.split(",") if s.strip()]
 
 
+def _trim_context(messages: list, max_chars: int) -> list:
+    """Tronque les messages Pinecone si le contexte total dépasse max_chars.
+    SystemMessage et HumanMessage originaux (question) sont toujours préservés."""
+    total = sum(len(getattr(m, "content", "") or "") for m in messages)
+    if total <= max_chars:
+        return messages
+
+    result = []
+    budget = max_chars
+    for m in messages:
+        content = getattr(m, "content", "") or ""
+        if isinstance(m, HumanMessage) and content.startswith("[Résultats Pinecone"):
+            allowed = max(0, budget - sum(len(getattr(x, "content", "") or "") for x in result))
+            if allowed <= 0:
+                continue
+            m = HumanMessage(content=content[:allowed] + "…[tronqué]")
+        result.append(m)
+    return result
+
+
 # ── Nœuds mode agentic ─────────────────────────────────────────────────────
 
 def agent_node(state: AgentState) -> dict:
     """Nœud LLM : raisonne, décide de chercher (SEARCH:) ou de répondre."""
     messages = list(state.get("messages") or [])
+    if settings.debug_mode:
+        print("I AM IN AGENT NODE")
     if not messages or not isinstance(messages[0], SystemMessage):
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
 
+    _MAX_CONTEXT_CHARS = 11_000
+    messages = _trim_context(messages, _MAX_CONTEXT_CHARS)
+
+    if settings.debug_mode:
+        call_n = state.get("llm_call_count", 0) + 1
+        total_chars = sum(len(getattr(m, "content", "") or "") for m in messages)
+        print(f"  [agent call {call_n}] context={total_chars} chars (~{total_chars // 4} tokens)")
+        print("  waiting for response...")
     response = _llm().invoke(messages)
+    if settings.debug_mode:
+        print("LLM Response received")
     text = response.content if isinstance(response.content, str) else str(response.content)
 
     out = {
@@ -112,6 +146,8 @@ def agent_node(state: AgentState) -> dict:
 def tools_node(state: AgentState) -> dict:
     """Nœud outil : parse SEARCH: dans le dernier message AI, exécute Pinecone."""
     messages = state.get("messages", [])
+    if settings.debug_mode:
+        print("I AM IN TOOLS NODE")
     last_ai  = messages[-1]
     content  = getattr(last_ai, "content", "") or ""
 
@@ -138,7 +174,14 @@ def tools_node(state: AgentState) -> dict:
     }
 
 
+_MAX_LLM_CALLS = 6
+
+
 def should_continue(state: AgentState) -> str:
+    if settings.debug_mode:
+        print("I AM IN SHOULD CONTINUE")
+    if state.get("llm_call_count", 0) >= _MAX_LLM_CALLS:
+        return END
     messages = state.get("messages") or []
     last     = messages[-1]
     content  = getattr(last, "content", "") or ""

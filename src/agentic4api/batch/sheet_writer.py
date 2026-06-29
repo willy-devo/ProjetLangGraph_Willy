@@ -32,8 +32,12 @@ from __future__ import annotations
 import json
 import os
 
+import socket
+
 import gspread
 from google.oauth2.service_account import Credentials
+
+socket.setdefaulttimeout(30)
 
 from agentic4api.config.settings import settings
 
@@ -51,7 +55,6 @@ def _client() -> gspread.Client:
     mode = settings.google_auth_mode.lower()
 
     if mode == "oauth2":
-        # gspread gère tout : ouvre le navigateur si token absent, rafraîchit si expiré.
         return gspread.oauth(
             credentials_filename=settings.google_credentials_json,
             authorized_user_filename="token.json",

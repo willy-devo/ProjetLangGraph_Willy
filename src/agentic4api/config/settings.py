@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     # --- Batch ---
     batch_wait_s: float = 2.0  # pause entre chaque question (rate limiting, identique au Wait N8N)
 
+    # --- Debug ---
+    debug_mode: bool = True   # DEBUG_MODE=true dans .env pour activer les prints de debug
+
     @property
     def kong_embed_base_url(self) -> str:
         """Base URL pour OpenAIEmbeddings : retire le segment /embeddings final.

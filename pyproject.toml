@@ -26,6 +26,14 @@ dependencies = [
 dev = ["pytest>=8.0.0"]
 # server.py optionnel (endpoint HTTP) :
 server = ["fastapi>=0.110.0", "uvicorn>=0.30.0"]
+# Notebook d'évaluation (claude_context/Sheet Eval.ipynb) :
+eval = [
+    "matplotlib>=3.8.0",
+    "numpy>=1.26.0",
+    "openpyxl>=3.1.0",              # export Excel
+    "google-auth-oauthlib>=1.2.0",  # OAuth2 local (token.json) pour gspread
+    "python-dotenv>=1.0.0",         # chargement .env dans le notebook
+]
 
 [project.scripts]
 # Permet : `agentic4api-batch --limit 5`

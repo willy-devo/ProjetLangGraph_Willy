@@ -49,7 +49,8 @@ from agentic4api.batch.sheet_writer import append_row, get_worksheet, init_sheet
 from agentic4api.config.settings import settings
 from agentic4api.graph.build import build_graph
 
-_RATE_LIMIT_BACKOFFS = [60, 120, 300, 600]  # secondes d'attente entre les retries
+_RATE_LIMIT_BACKOFFS  = [5,10,20] #[60, 120, 300, 600]   # 429 : quota dépassé, longue attente
+_GATEWAY_BACKOFFS     = [5,10,20] #[5, 10, 30]           # 504 : timeout transient, retry rapide
 _HISTORY_TRUNCATE_WORDS = 40               # mots max par message dans history_summary
 
 
@@ -123,6 +124,13 @@ def _history_summary(messages: list) -> str:
 def _extract_result(state: dict) -> tuple[str, list[str], dict]:
     """Extrait tous les champs mesurables depuis AgentState."""
     text = state.get("answer_text", "")
+    if not text:
+        # Le LLM a dépassé _MAX_LLM_CALLS sans conclure : on prend le dernier message AI
+        for msg in reversed(state.get("messages", [])):
+            content = getattr(msg, "content", "") or ""
+            if content and not content.startswith("[Résultats Pinecone"):
+                text = content
+                break
     return text, state.get("final_apis", []), {
         "tokens_in":        state.get("tokens_in", 0),
         "tokens_out":       state.get("tokens_out", 0),
@@ -173,34 +181,50 @@ def _invoke_with_retry(
     question_id: str = "",
     question: str = "",
 ) -> tuple[dict, float]:
-    """Appelle graph.invoke avec retry sur 429. Retourne (state, latency_s).
+    """Appelle graph.invoke avec retry sur toute erreur. Retourne (state, latency_s).
     Chaque tentative echouee est loggee dans error_path."""
     total_wait = 0
-    for attempt, backoff in enumerate([0] + _RATE_LIMIT_BACKOFFS, start=1):
-        if backoff:
-            print(f"  [429] Rate limit. Attente {backoff}s (tentative {attempt}/{len(_RATE_LIMIT_BACKOFFS)+1})...")
-            time.sleep(backoff)
-            total_wait += backoff
+    attempt = 0
+    backoffs_429 = iter(_RATE_LIMIT_BACKOFFS)
+    backoffs_504 = iter(_GATEWAY_BACKOFFS)
+    while True:
+        attempt += 1
         try:
             t0 = time.perf_counter()
-            state = graph.invoke(inp)
+            state = graph.invoke(inp, config={"recursion_limit": 10})
             return state, round(time.perf_counter() - t0, 3)
-        except openai.RateLimitError as e:
-            fatal = attempt > len(_RATE_LIMIT_BACKOFFS)
+        except Exception as e:
+            error_type = type(e).__name__
+            status_code = getattr(e, "status_code", None)
+
+            if status_code == 504:
+                backoff = next(backoffs_504, None)
+            else:
+                backoff = next(backoffs_429, None)
+
+            fatal = backoff is None
+            print(f"  [{error_type}] code={status_code} : {e}")
             append_error_jsonl(
                 error_path,
                 question_id=question_id,
                 question=question,
                 attempt=attempt,
-                backoff_s=backoff,
-                error_type="RateLimitError",
+                backoff_s=backoff or 0,
+                error_type=f"{error_type}({status_code})",
                 error_message=str(e),
                 fatal=fatal,
                 total_wait_s=total_wait,
             )
             if fatal:
-                raise
-    raise RuntimeError("Unreachable")
+                print(f"  [fatal] Retries épuisés — réponse par défaut pour {question_id}")
+                return {
+                    "answer_text": "No apis related to the previous question :\nRECOMANDED_APIS: []",
+                    "final_apis":  [],
+                    "messages":    [],
+                }, round(total_wait, 3)
+            print(f"  [retry] Attente {backoff}s (tentative {attempt})...")
+            time.sleep(backoff)
+            total_wait += backoff
 
 
 def _run_sequential(golden: list[dict], graph, ws: gspread.Worksheet, jsonl_path: Path, error_path: Path) -> list[dict]:
@@ -210,7 +234,6 @@ def _run_sequential(golden: list[dict], graph, ws: gspread.Worksheet, jsonl_path
 
     for i, item in enumerate(golden, 1):
         q = item["question"]
-
         state, latency_s = _invoke_with_retry(
             graph, _graph_input(q), error_path,
             question_id=item.get("id", ""), question=q,

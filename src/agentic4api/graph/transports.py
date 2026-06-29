@@ -22,9 +22,10 @@ def _strip_auth(headers: httpx.Headers) -> dict[str, str]:
 class KongChatTransport(httpx.BaseTransport):
     """Redirige vers l'URL Kong exacte + supprime Authorization."""
 
-    def __init__(self, target_url: str, verify: bool = True):
+    def __init__(self, target_url: str, verify: bool = True, timeout: float = 40.0):
         self._target = httpx.URL(target_url)
         self._inner = httpx.HTTPTransport(verify=verify)
+        self._timeout = httpx.Timeout(timeout)
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         new_req = httpx.Request(
@@ -32,6 +33,7 @@ class KongChatTransport(httpx.BaseTransport):
             url=self._target,
             headers=_strip_auth(request.headers),
             content=request.content,
+            extensions={"timeout": self._timeout.as_dict()},
         )
         return self._inner.handle_request(new_req)
 
@@ -39,9 +41,10 @@ class KongChatTransport(httpx.BaseTransport):
 class AsyncKongChatTransport(httpx.AsyncBaseTransport):
     """Version async de KongChatTransport (nécessaire pour astream_events)."""
 
-    def __init__(self, target_url: str, verify: bool = True):
+    def __init__(self, target_url: str, verify: bool = True, timeout: float = 40.0):
         self._target = httpx.URL(target_url)
         self._inner = httpx.AsyncHTTPTransport(verify=verify)
+        self._timeout = httpx.Timeout(timeout)
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         new_req = httpx.Request(
@@ -49,6 +52,7 @@ class AsyncKongChatTransport(httpx.AsyncBaseTransport):
             url=self._target,
             headers=_strip_auth(request.headers),
             content=request.content,
+            extensions={"timeout": self._timeout.as_dict()},
         )
         return await self._inner.handle_async_request(new_req)
 
