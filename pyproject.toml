@@ -26,6 +26,8 @@ dependencies = [
 dev = ["pytest>=8.0.0"]
 # server.py optionnel (endpoint HTTP) :
 server = ["fastapi>=0.110.0", "uvicorn>=0.30.0"]
+# Serveur MCP (USE_MCP=true) :
+mcp-server = ["mcp>=1.0.0", "fastapi>=0.110.0", "uvicorn>=0.30.0"]
 # Notebook d'évaluation (claude_context/Sheet Eval.ipynb) :
 eval = [
     "matplotlib>=3.8.0",

@@ -1,4 +1,19 @@
 services:
+
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    ports:
+      - "8090:8090"
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   chat:
     build:
       context: .
@@ -7,4 +22,7 @@ services:
       - "8080:8080"
     env_file: .env
     volumes:
-      - ./data:/app/data   # golden dataset accessible sans rebuild
+      - ./data:/app/data
+    depends_on:
+      mcp:
+        condition: service_healthy

@@ -99,6 +99,17 @@ def _trim_context(messages: list, max_chars: int) -> list:
     return result
 
 
+def _search_via_mcp(query: str) -> list[dict]:
+    """Appelle le serveur MCP via REST quand USE_MCP=true."""
+    resp = httpx.post(
+        f"{settings.mcp_url}/search",
+        json={"query": query, "top_k": settings.top_k},
+        timeout=30.0,
+    )
+    resp.raise_for_status()
+    return resp.json()["results"]
+
+
 # ── Nœuds mode agentic ─────────────────────────────────────────────────────
 
 def agent_node(state: AgentState) -> dict:
@@ -160,7 +171,10 @@ def tools_node(state: AgentState) -> dict:
         query = query.strip()
         if not query:
             continue
-        results = search(query, top_k=settings.top_k)
+        if settings.use_mcp:
+            results = _search_via_mcp(query)
+        else:
+            results = search(query, top_k=settings.top_k)
 
         for r in results:
             slug = r.get("slug", "")

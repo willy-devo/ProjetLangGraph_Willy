@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     # --- Chat ---
     chat_memory: bool = True  # CHAT_MEMORY=false dans .env pour désactiver la mémoire entre messages
 
+    # --- MCP ---
+    use_mcp: bool = True                        # USE_MCP=true pour router les recherches via le serveur MCP
+    mcp_url: str = "http://mcp:8090"            # MCP_URL=http://localhost:8090 en local hors Docker
+
     # --- Debug ---
     debug_mode: bool = True   # DEBUG_MODE=true dans .env pour activer les prints de debug
 
