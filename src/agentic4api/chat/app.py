@@ -1,27 +1,30 @@
 """
-Chat Chainlit — expose le graphe en UI conversationnelle.
+Chat Chainlit — expose le graphe en UI conversationnelle avec mémoire.
 
 Lancer en local :
     chainlit run src/agentic4api/chat/app.py -w
 
-Déployer : conteneuriser (Dockerfile) → Cloud Run. C'est CE fichier qui tourne
-en permanence pour que devs / Marc puissent discuter avec l'agent.
-
 Le chat NE touche PAS le Google Sheet : il répond en direct. Le Sheet est réservé
 au batch d'éval.
 
-Mode stateless : chaque question repart de zéro, pas d'historique entre messages.
+Mode stateful : la mémoire est conservée par session (thread_id unique par onglet).
 """
 
 from __future__ import annotations
 
+import uuid
+
 import chainlit as cl
 
-from agentic4api.graph.build import graph
+from agentic4api.config.settings import settings
+from agentic4api.graph.build import build_graph
+
+_graph = build_graph(use_memory=settings.chat_memory)
 
 
 @cl.on_chat_start
 async def start():
+    cl.user_session.set("thread_id", str(uuid.uuid4()))
     await cl.Message(
         content="Bonjour ! Décris ton besoin et je te trouve l'API du catalogue."
     ).send()
@@ -29,16 +32,40 @@ async def start():
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    msg = cl.Message(content="")
-    inputs = {"messages": [("human", message.content)]}
+    thread_id = cl.user_session.get("thread_id")
+    config    = {"configurable": {"thread_id": thread_id}}
+    inputs    = {"messages": [("human", message.content)], "is_chat": True}
 
-    async for event in graph.astream_events(inputs, version="v2"):
+    msg         = cl.Message(content="")
+    line_buffer = ""
+
+    async for event in _graph.astream_events(inputs, config=config, version="v2"):
         kind = event["event"]
-        if kind == "on_chat_model_stream":
-            chunk = event["data"]["chunk"]
-            if chunk.content:
-                await msg.stream_token(
-                    chunk.content if isinstance(chunk.content, str) else str(chunk.content)
-                )
+
+        # Affiche un Step discret pendant la recherche Pinecone
+        if kind == "on_chain_start" and event.get("name") == "tools":
+            async with cl.Step(name="Recherche dans le catalogue", type="tool"):
+                pass
+
+        elif kind == "on_chat_model_stream":
+            chunk   = event["data"]["chunk"]
+            content = chunk.content if isinstance(chunk.content, str) else str(chunk.content)
+            if not content:
+                continue
+
+            # Accumule par ligne pour filtrer les appels SEARCH:
+            line_buffer += content
+            while "\n" in line_buffer:
+                line, line_buffer = line_buffer.split("\n", 1)
+                if not line.strip().startswith("SEARCH:"):
+                    await msg.stream_token(line + "\n")
+
+    # Vide le buffer restant (dernière ligne sans \n)
+    if line_buffer and not line_buffer.strip().startswith("SEARCH:"):
+        await msg.stream_token(line_buffer)
+
+    # Fallback si le LLM a boucle sans conclure (toutes les lignes etaient SEARCH:)
+    if not msg.content.strip():
+        msg.content = "Je n'ai pas trouvé d'API correspondante dans le catalogue pour cette demande."
 
     await msg.update()

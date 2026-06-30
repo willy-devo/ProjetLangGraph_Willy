@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     # --- Batch ---
     batch_wait_s: float = 2.0  # pause entre chaque question (rate limiting, identique au Wait N8N)
 
+    # --- Chat ---
+    chat_memory: bool = True  # CHAT_MEMORY=false dans .env pour désactiver la mémoire entre messages
+
     # --- Debug ---
     debug_mode: bool = True   # DEBUG_MODE=true dans .env pour activer les prints de debug
 

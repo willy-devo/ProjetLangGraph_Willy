@@ -27,7 +27,7 @@ from agentic4api.graph.transports import AsyncKongChatTransport, KongChatTranspo
 
 _RECO_RE   = re.compile(r"RECOMM[AE]N?DED_APIS\s*:\s*\[([^\]]*)\]", re.IGNORECASE)
 # Le LLM déclenche une recherche en écrivant "SEARCH: <requête>" sur une ligne
-_SEARCH_RE = re.compile(r"(?:^|\n)SEARCH:\s*(.+)", re.MULTILINE)
+_SEARCH_RE = re.compile(r"(?:^|\n)SEARCH:\s*(\S[^\n]*)", re.MULTILINE)
 
 
 @lru_cache(maxsize=1)
@@ -109,8 +109,14 @@ def agent_node(state: AgentState) -> dict:
     if not messages or not isinstance(messages[0], SystemMessage):
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
 
-    _MAX_CONTEXT_CHARS = 11_000
-    messages = _trim_context(messages, _MAX_CONTEXT_CHARS)
+    if not state.get("is_chat"):
+        messages = _trim_context(messages, 11_000)
+        if state.get("llm_call_count", 0) + 1 >= _MAX_LLM_CALLS:
+            messages = messages + [HumanMessage(content=(
+                "[Système] Tu as atteint la limite de recherches. "
+                "Donne maintenant ta réponse finale avec RECOMMANDED_APIS. "
+                "N'utilise plus SEARCH:."
+            ))]
 
     if settings.debug_mode:
         call_n = state.get("llm_call_count", 0) + 1
@@ -151,7 +157,9 @@ def tools_node(state: AgentState) -> dict:
     retrieved_slugs = {}
 
     for query in _SEARCH_RE.findall(content):
-        query   = query.strip()
+        query = query.strip()
+        if not query:
+            continue
         results = search(query, top_k=settings.top_k)
 
         for r in results:
@@ -176,7 +184,7 @@ _MAX_LLM_CALLS = 6
 def should_continue(state: AgentState) -> str:
     if settings.debug_mode:
         print("I AM IN SHOULD CONTINUE")
-    if state.get("llm_call_count", 0) >= _MAX_LLM_CALLS:
+    if not state.get("is_chat") and state.get("llm_call_count", 0) >= _MAX_LLM_CALLS:
         return END
     messages = state.get("messages") or []
     last     = messages[-1]

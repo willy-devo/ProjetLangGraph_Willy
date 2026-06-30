@@ -58,6 +58,9 @@ class AgentState(TypedDict, total=False):
     tool_call_count: Annotated[int, operator.add] # nb d'appels à search_apis_tool
     llm_call_count: Annotated[int, operator.add] # nb d'appels LLM de raisonnement
 
+    # --- Mode ---
+    is_chat: bool  # True = chat (pas de limite LLM ni de trim contexte), False/absent = batch
+
     # --- Tokens (operator.add = accumulation sur le ReAct loop) ---
     tokens_in: Annotated[int, operator.add]
     tokens_out: Annotated[int, operator.add]
