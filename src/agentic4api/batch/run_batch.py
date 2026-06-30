@@ -352,7 +352,7 @@ def run(
     graph      = build_graph(use_memory=False)
     jsonl_path = log_path()
     error_path = error_log_path()
-    ws         = get_worksheet(worksheet) if skip else init_sheet(worksheet, rows_estimate=len(golden) + skip)
+    ws         = get_worksheet(worksheet)
 
     mode_label = f"parallele (batch_size={batch_size})" if parallel else "sequentiel"
     print(f"Mode : {mode_label} | {len(golden)} questions")
