@@ -47,9 +47,6 @@ class Settings(BaseSettings):
 
     # --- Retrieval ---
     top_k: int = 20           # N8N utilisait 20 ; 5 donnait trop peu de candidats à Gemini
-    # "rag"      : retrieve toujours appelé UNE fois avant le LLM (déterministe)
-    # "agentic"  : le LLM décide lui-même quand/combien de fois appeler Pinecone (outil)
-    retrieval_mode: str = "agentic"
 
     # --- Génération ---
     # thinking_budget / thinking_level supprimés : Kong (mode OpenAI-compat) ne les expose pas.

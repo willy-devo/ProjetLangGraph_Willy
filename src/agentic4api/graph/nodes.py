@@ -1,14 +1,10 @@
 """
-Nœuds du graphe — partagés entre les deux modes.
-
-Mode agentic  : agent_node → tools_node* → agent_node → END
+Nœuds du graphe agentic : agent_node → tools_node* → agent_node → END
 
   Le LLM décide de chercher en écrivant : SEARCH: <requête>
   (text-based tool calling — évite bind_tools + thought_signature Gemini)
   tools_node exécute la recherche Pinecone et injecte les résultats
   comme HumanMessage dans l'historique.
-
-Mode RAG      : retrieve → answer → END
 """
 
 from __future__ import annotations
@@ -264,26 +260,3 @@ def should_continue_bt(state: AgentState) -> str:
     return END
 
 
-# ── Nœuds mode RAG ─────────────────────────────────────────────────────────
-
-def retrieve(state: AgentState) -> dict:
-    candidates = search(state["question"])
-    return {
-        "candidates": candidates,
-        "scores":     [c["score"] for c in candidates],
-    }
-
-
-def answer(state: AgentState) -> dict:
-    candidates = state.get("candidates", [])
-    context    = "\n".join(_format_candidate(c) for c in candidates)
-    messages   = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Demande : {state['question']}\n\nCandidats Pinecone :\n{context}"),
-    ]
-    response = _llm().invoke(messages)
-    text = response.content if isinstance(response.content, str) else str(response.content)
-
-    out = {"answer_text": text, "final_apis": _parse_apis(text), "llm_call_count": 1}
-    out.update(_usage_delta(response))
-    return out

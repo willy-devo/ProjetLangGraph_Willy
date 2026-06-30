@@ -1,0 +1,38 @@
+{
+	"candidates": [
+		{
+			"content": {
+				"parts": [
+					{
+						"functionCall": {
+							"name": "search_apis",
+							"args": {
+								"query": "créer une commande client"
+							}
+						},
+						"thoughtSignature": "CqsCAQw51sfLjJwyu3XOUDYxsos5P+/l1tckA8bWHDmZAT93AUtxgoPFvcSgkNZlh0yi8M5z00r+YIAl0phkz/2o4+33MmZTk6n3s0GtIN1yVa+g18Ab9ewVIoQQ0/hWM2HO/3REXJHhwjkMklPw4aM4WzEfUWn2RmLBJ6fLaBTxwBWiytXMg2npyRIoXfPWIP0V4uQQ1ujCho3/DN/NmRuldVrrwZ00LTA1PJtz2SleBSmf5cf5AkZ25nnZT5ycPt9Pd9RSoLdGzclMJGQEET0uIi8cxHgvYR7xVFedCs8zJa9BF0oVKZrw4Ul2fprvEx8yds/JZTUuQjzaoWbXvC3cCB7mEIg/TAW6scSRc559WTt3BSAla7Hrr7vu7g6ohT1aIfg2GGTVtTpmKLw="
+					}
+				],
+				"role": "model"
+			},
+			"finishReason": "STOP",
+			"index": 0,
+			"finishMessage": "Model generated function call(s)."
+		}
+	],
+	"usageMetadata": {
+		"promptTokenCount": 51,
+		"candidatesTokenCount": 20,
+		"totalTokenCount": 125,
+		"promptTokensDetails": [
+			{
+				"modality": "TEXT",
+				"tokenCount": 51
+			}
+		],
+		"thoughtsTokenCount": 54,
+		"serviceTier": "standard"
+	},
+	"modelVersion": "gemini-2.5-flash",
+	"responseId": "vBo9arerK7nZxs0PjPSPiAo"
+}

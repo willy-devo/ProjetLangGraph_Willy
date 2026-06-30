@@ -169,8 +169,6 @@ def _to_log_row(item: dict, state: dict, latency_s: float) -> dict:
 
 
 def _graph_input(question: str) -> dict:
-    if settings.retrieval_mode == "rag":
-        return {"question": question}
     return {"messages": [("human", question)]}
 
 
@@ -357,7 +355,7 @@ def run(
     ws         = get_worksheet(worksheet) if skip else init_sheet(worksheet, rows_estimate=len(golden) + skip)
 
     mode_label = f"parallele (batch_size={batch_size})" if parallel else "sequentiel"
-    print(f"Mode : {mode_label} | {len(golden)} questions | retrieval: {settings.retrieval_mode}")
+    print(f"Mode : {mode_label} | {len(golden)} questions")
     resume_note = " (reprise, pas de reset)" if skip else ""
     print(f"Sheet: onglet '{worksheet}' - mise a jour en temps reel{resume_note}")
     print(f"Log  : {jsonl_path}")

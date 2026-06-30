@@ -5,7 +5,7 @@ Sous-modules :
   - state.py     : AgentState (TypedDict) porté à travers les nœuds.
   - retriever.py : wrapper Pinecone (embed + query + scores bruts).
   - prompts.py   : system prompt (noms d'API génériques, format RECOMMANDED_APIS).
-  - nodes.py     : guard / retrieve / answer (+ capture tokens & latence).
+  - nodes.py     : agent_node / tools_node / should_continue (+ capture tokens & latence).
   - build.py     : assemble, compile, et expose `graph` (point d'import unique).
 
 Imports pratiques (chargés à la demande pour ne pas tirer langgraph inutilement) :

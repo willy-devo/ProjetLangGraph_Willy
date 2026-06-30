@@ -1,5 +1,5 @@
 """
-Le State unique partagé par les deux modes (agentic et RAG).
+State du graphe agentic.
 
 Reducers :
   messages        → add_messages         : append (historique du ReAct loop)
@@ -45,17 +45,10 @@ def _merge_tokens_detail(a: dict | None, b: dict | None) -> dict:
 
 
 class AgentState(TypedDict, total=False):
-    # --- ReAct loop (mode agentic) ---
+    # --- ReAct loop ---
     messages: Annotated[list[AnyMessage], add_messages]
 
-    # --- Entrée RAG ---
-    question: str
-
-    # --- Retrieval RAG ---
-    candidates: list[dict]
-    scores: list[float]
-
-    # --- Sortie commune ---
+    # --- Sortie ---
     final_apis: list[str]    # slugs recommandés extraits de la réponse finale
     answer_text: str         # texte brut complet (contient "RECOMMANDED_APIS: [...]")
 
