@@ -84,7 +84,7 @@ def init_sheet(worksheet_name: str, rows_estimate: int = 500) -> gspread.Workshe
 
     try:
         ws = sh.worksheet(worksheet_name)
-        ws.clear()
+        #ws.clear()
     except gspread.WorksheetNotFound:
         ws = sh.add_worksheet(title=worksheet_name, rows=rows_estimate + 10, cols=len(HEADERS))
 
