@@ -4,7 +4,8 @@
       "PowerShell(python --version)",
       "PowerShell(pip --version)",
       "PowerShell(Get-Content \"c:\\\\Users\\\\willy.vo\\\\Desktop\\\\MySpace\\\\Stage2026\\\\Projet\\\\ProjetLangGraph_Willy\\\\.env\" | Where-Object { $_ -match \"SHEET|GOOGLE|CREDENTIAL\" })",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "PowerShell(python \"C:/Users/willy.vo/AppData/Local/Temp/claude/patch_recap2.py\" 2>&1)"
     ]
   }
 }
