@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     use_mcp: bool = True                        # USE_MCP=true pour router les recherches via le serveur MCP
     mcp_url: str = "http://mcp:8090"            # MCP_URL=http://localhost:8090 en local hors Docker
 
+    # --- LangFuse ---
+    langfuse_enabled: bool = True              # LANGFUSE_ENABLED=true pour activer le tracing
+    langfuse_public_key: str = ""               # LANGFUSE_PUBLIC_KEY=pk-lf-...
+    langfuse_secret_key: str = ""               # LANGFUSE_SECRET_KEY=sk-lf-...
+    langfuse_host: str = "https://cloud.langfuse.com"  # LANGFUSE_HOST pour self-hosted
+
     # --- Debug ---
     debug_mode: bool = True   # DEBUG_MODE=true dans .env pour activer les prints de debug
 

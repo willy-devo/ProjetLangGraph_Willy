@@ -32,8 +32,13 @@ async def start():
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    thread_id = cl.user_session.get("thread_id")
-    config    = {"configurable": {"thread_id": thread_id}}
+    from agentic4api.observability.langfuse_helper import callbacks as lf_callbacks, get_handler
+    thread_id  = cl.user_session.get("thread_id")
+    lf_handler = get_handler(session_id=thread_id, trace_name="chat")
+    config     = {
+        "configurable": {"thread_id": thread_id},
+        "callbacks": [lf_handler] if lf_handler else [],
+    }
     inputs    = {"messages": [("human", message.content)], "is_chat": True}
 
     msg         = cl.Message(content="")
@@ -69,3 +74,7 @@ async def on_message(message: cl.Message):
         msg.content = "Je n'ai pas trouvé d'API correspondante dans le catalogue pour cette demande."
 
     await msg.update()
+
+    # Flush LangFuse pour s'assurer que la trace est envoyée
+    if lf_handler:
+        lf_handler.flush()

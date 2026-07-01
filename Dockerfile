@@ -7,7 +7,7 @@ COPY pyproject.toml ./
 COPY src ./src
 COPY data ./data
 
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e ".[observability]"
 
 # Cloud Run fournit $PORT
 ENV PORT=8080

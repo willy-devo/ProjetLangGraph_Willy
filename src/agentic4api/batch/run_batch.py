@@ -188,8 +188,12 @@ def _invoke_with_retry(
     while True:
         attempt += 1
         try:
+            from agentic4api.observability.langfuse_helper import callbacks as lf_callbacks
             t0 = time.perf_counter()
-            state = graph.invoke(inp, config={"recursion_limit": 10})
+            state = graph.invoke(inp, config={
+                "recursion_limit": 10,
+                "callbacks": lf_callbacks(session_id=question_id, trace_name=f"batch-{question_id}"),
+            })
             return state, round(time.perf_counter() - t0, 3)
         except Exception as e:
             error_type = type(e).__name__

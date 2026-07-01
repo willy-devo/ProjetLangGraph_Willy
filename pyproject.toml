@@ -24,6 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0.0"]
+observability = ["langfuse>=2.0.0,<3.0.0"]
 # server.py optionnel (endpoint HTTP) :
 server = ["fastapi>=0.110.0", "uvicorn>=0.30.0"]
 # Serveur MCP (USE_MCP=true) :
